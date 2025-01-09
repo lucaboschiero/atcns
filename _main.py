@@ -166,8 +166,8 @@ def main(args):
         writer.add_scalar('test/loss', loss, steps)
         writer.add_scalar('test/accuracy', accuracy, steps)
         
-        detected = {"Client_"+str(client.cid) : 1 if client.cid in attackers else 0 for client in server.clients}
-        writer.add_scalars("test/detected_clients", detected, steps)
+        #detected = {"Client_"+str(client.cid) : 1 if client.cid in attackers else 0 for client in server.clients}
+        #writer.add_scalars("test/detected_clients", detected, steps)
         
         if 'BACKDOOR' in args.attacks.upper():
             if 'SEMANTIC' in args.attacks.upper():

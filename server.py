@@ -145,14 +145,14 @@ class Server():
             self.saveChanges(selectedClients)
             
         tic = time.perf_counter()
-        Delta, attackers = self.AR(selectedClients)
+        Delta = self.AR(selectedClients)
         toc = time.perf_counter()
         print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
-        
+
         for param in self.model.state_dict():
             self.model.state_dict()[param] += Delta[param]
         self.iter += 1
-        return attackers
+        return 0
 
     def saveChanges(self, clients):
 
@@ -314,10 +314,10 @@ class Server():
         deltas = [c.getDelta() for c in clients]
         vecs = [utils.net2vec(delta) for delta in deltas]
         vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]
-        result, attackers = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
+        result = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
         result = result.view(-1)
         utils.vec2net(result, Delta)
-        return Delta, attackers
+        return Delta
 
     def FedFuncWholeStateDict(self, clients, func):
         '''
