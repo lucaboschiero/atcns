@@ -36,7 +36,7 @@ class Client():
 
     def train(self):
         self.model.to(self.device)
-        self.model.train()
+        self.model.train()             #setta pytorch in modalità train
         for epoch in range(self.inner_epochs):
             for batch_idx, (data, target) in enumerate(self.dataLoader):
                 data, target = self.data_transform(data, target)

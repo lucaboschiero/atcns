@@ -136,7 +136,7 @@ def main(args):
             client_i = Client(i, model, trainData[i], optimizer, criterion, device, args.inner_epochs)
         server.attach(client_i)
 
-    loss, accuracy = server.test()
+    loss, accuracy = server.test()           #test to get accuracy result before training
     steps = 0
     writer.add_scalar('test/loss', loss, steps)
     writer.add_scalar('test/accuracy', accuracy, steps)
