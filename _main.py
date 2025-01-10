@@ -179,9 +179,9 @@ def main(args):
         
         if 'BACKDOOR' in args.attacks.upper():
             if 'SEMANTIC' in args.attacks.upper():
-                loss, accuracy, bdata, bpred = server.test_semanticBackdoor()
+                loss, accuracy, bdata, bpred = server.test_semanticBackdoor()       # launch again testing for semantic backdoor attacks
             else:
-                loss, accuracy = server.test_backdoor()
+                loss, accuracy = server.test_backdoor()                              # launch again testing for backdoor attacks
 
             writer.add_scalar('test/loss_backdoor', loss, steps)
             writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
