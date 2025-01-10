@@ -21,12 +21,14 @@ def main(args):
 
     torch.manual_seed(args.seed)
 
-    device = args.device
+    device = args.device           #define the device (cpu or cuda) to be used
 
-    attacks = args.attacks
+    attacks = args.attacks         #define the attack name(?)
 
-    writer = SummaryWriter(f'./logs/{args.experiment_name}')
+    writer = SummaryWriter(f'./logs/{args.experiment_name}')       
+    
 
+    #depending on the dataset, gets a list of training data loaders, one for each client, and 1 test data loader for the server
     if args.dataset == 'mnist':
         from tasks import mnist
         trainData = mnist.train_dataloader(args.num_clients, loader_type=args.loader_type, path=args.loader_path,
@@ -64,16 +66,19 @@ def main(args):
         criterion = F.cross_entropy
 
     # create server instance
-    model0 = Net()
-    server = Server(model0, testData, criterion, device)
-    server.set_AR(args.AR)
+    model0 = Net()     #create a mnist/cifar/cifar100/fminst object according to the dataset
+    server = Server(model0, testData, criterion, device)          #create a server instance, passing the model, testData...
+    server.set_AR(args.AR)             #set the aggregation rule (The aggregation rule determines how the updates from different clients are combined.)
     server.path_to_aggNet = args.path_to_aggNet
+
     if args.save_model_weights:
         server.isSaveChanges = True
         server.savePath = f'./AggData/{args.loader_type}/{args.dataset}/{args.attacks}/{args.AR}'
         from pathlib import Path
         Path(server.savePath).mkdir(parents=True, exist_ok=True)
+
         '''
+        The following code marks specific clients as malicious by setting their label to 0.
         honest clients are labeled as 1, malicious clients are labeled as 0
         '''
         label = torch.ones(args.num_clients)
@@ -90,21 +95,23 @@ def main(args):
         for i in args.attacker_list_multilabelFlipping:
             label[i] = 0
 
-        torch.save(label, f'{server.savePath}/label.pt')
-    # create clients instance
+        torch.save(label, f'{server.savePath}/label.pt')        #Saves the label tensor (which marks honest and malicious clients) to the file
 
+    # create clients instance
     attacker_list_labelFlipping = args.attacker_list_labelFlipping
     attacker_list_omniscient = args.attacker_list_omniscient
     attacker_list_backdoor = args.attacker_list_backdoor
     attacker_list_labelFlippingDirectional = args.attacker_list_labelFlippingDirectional
     attacker_list_semanticBackdoor = args.attacker_list_semanticBackdoor
     attacker_list_multilabelFlipping = args.attacker_list_multilabelFlipping
+
     for i in range(args.num_clients):
         model = Net()
         if args.optimizer == 'SGD':
             optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
         elif args.optimizer == 'Adam':
             optimizer = optim.Adam(model.parameters(), lr=args.lr)
+
         if i in attacker_list_labelFlipping:
             client_i = Attacker_LabelFlipping01swap(i, model, trainData[i], optimizer, criterion, device,
                                                     args.inner_epochs)
@@ -120,11 +127,11 @@ def main(args):
         elif i in attacker_list_backdoor:
             client_i = Attacker_Backdoor(i, model, trainData[i], optimizer, criterion, device, args.inner_epochs)
             
-            if 'RANDOM' in args.attacks.upper():
+            if 'RANDOM' in args.attacks.upper():                    #if the user chooses a random trigger for backdoor attack
                 client_i.utils.setRandomTrigger(seed=args.attacks)
                 print(client_i.utils.trigger_position)
                 print(f'Client {i} is using a random backdoor with seed \"{args.attacks}\"')
-            if 'CUSTOM' in args.attacks.upper():
+            if 'CUSTOM' in args.attacks.upper():                   #if the user chooses a custom trigger for backdoor attack
                 client_i.utils.setTrigger(*args.backdoor_trigger)
                 print(client_i.utils.trigger_position)
                 print(f'Client {i} is using a backdoor with hyperparameter \"{args.backdoor_trigger}\"')
@@ -133,8 +140,9 @@ def main(args):
             client_i = Attacker_SemanticBackdoor(i, model, trainData[i], optimizer, criterion, device,
                                                  args.inner_epochs)
         else:
-            client_i = Client(i, model, trainData[i], optimizer, criterion, device, args.inner_epochs)
-        server.attach(client_i)
+            client_i = Client(i, model, trainData[i], optimizer, criterion, device, args.inner_epochs)   #good clients
+
+        server.attach(client_i)         #add clients objects to the server
 
     loss, accuracy = server.test()           #test to get accuracy result before training
     steps = 0
@@ -143,25 +151,25 @@ def main(args):
 
     if 'BACKDOOR' in args.attacks.upper():
         if 'SEMANTIC' in args.attacks.upper():
-            loss, accuracy, bdata, bpred = server.test_semanticBackdoor()
+            loss, accuracy, bdata, bpred = server.test_semanticBackdoor()     # test for semantic backdoor attack
         else:
-            loss, accuracy = server.test_backdoor()
+            loss, accuracy = server.test_backdoor()           # test for backdoor attack
 
         writer.add_scalar('test/loss_backdoor', loss, steps)
         writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
 
-    for j in range(args.epochs):
+    for j in range(args.epochs):                      # for each epoch
         steps = j + 1
 
         print('\n\n########EPOCH %d ########' % j)
         print('###Model distribution###\n')
-        server.distribute()
+        server.distribute()                            #distribute the model to all clients
         #         group=Random().sample(range(5),1)
-        group = range(args.num_clients)
-        attackers = server.train(group)
+        group = range(args.num_clients)                #integer from 0 to num_clients
+        attackers = server.train(group)                #train the clients
         #         server.train_concurrent(group)
 
-        loss, accuracy = server.test()
+        loss, accuracy = server.test()               # launch again testing
 
         writer.add_scalar('test/loss', loss, steps)
         writer.add_scalar('test/accuracy', accuracy, steps)

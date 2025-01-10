@@ -9,7 +9,7 @@ from torchvision import datasets, transforms
 
 from dataloader import *
 
-
+# Definition of the neural network model
 class Net(nn.Module):
     '''
     LeNet
@@ -21,8 +21,7 @@ class Net(nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-        # 1 input image channel, 6 output channels, 3x3 square convolution
-        # kernel
+        # 1 input image channel, 6 output channels, 3x3 square convolution kernel
         self.conv1 = nn.Conv2d(1, 6, 3)
         self.conv2 = nn.Conv2d(6, 16, 3)
         # an affine operation: y = Wx + b
@@ -49,6 +48,9 @@ class Net(nn.Module):
         return num_features
 
 
+# Function to load the MNIST dataset with transformations
+# The images are resized to 32x32 (original size is 28x28) to match the input size of the network
+# Normalization is applied to have zero mean and unit variance
 def getDataset():
     dataset = datasets.MNIST('./data',
                              train=True,
@@ -59,11 +61,15 @@ def getDataset():
     return dataset
 
 
+# Helper function to create a basic data loader for the MNIST dataset
+# It uses one of the custom loaders (iidLoader, byLabelLoader, or dirichletLoader) from dataloader.py
 def basic_loader(num_clients, loader_type):
     dataset = getDataset()
     return loader_type(num_clients, dataset)
 
 
+# Function to create a training data loader
+# It supports three types of partitioning: 'iid', 'byLabel', and 'dirichlet'
 def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/loader.pk'):
     assert loader_type in ['iid', 'byLabel', 'dirichlet'], 'Loader has to be either \'iid\' or \'non_overlap_label \''
     if loader_type == 'iid':
@@ -73,6 +79,7 @@ def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/lo
     elif loader_type == 'dirichlet':
         loader_type = dirichletLoader
 
+    # If storing is enabled, try to load the pre-existing loader from a file
     if store:
         try:
             with open(path, 'rb') as handle:
@@ -83,6 +90,8 @@ def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/lo
     else:
         print('Initialize a data loader')
         loader = basic_loader(num_clients, loader_type)
+
+    # Save the loader to a file if store is enabled
     if store:
         with open(path, 'wb') as handle:
             pickle.dump(loader, handle)
@@ -90,6 +99,8 @@ def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/lo
     return loader
 
 
+# Function to create a test data loader
+# It downloads the test set of MNIST and applies the same transformations as the training set
 def test_dataloader(test_batch_size):
     test_loader = torch.utils.data.DataLoader(datasets.MNIST('../data',train=False, download=True,
                                                              transform=transforms.Compose(

@@ -46,33 +46,43 @@ class Server():
 
     def test(self):
         print("[Server] Start testing")
-        self.model.to(self.device)
-        self.model.eval()
+        self.model.to(self.device)          #Moves the model to the appropriate device (CPU or GPU) for testing.
+        self.model.eval()                   #Puts the model in evaluation mode (disables dropout, batch normalization updates, etc.).
+        
+        #variable initialization
         test_loss = 0
         correct = 0
         count = 0
         c = 0
         f1 = 0
         conf = np.zeros([10,10])
+
+        #Disables gradient calculations to save memory and speed up testing (no backpropagation needed) and iterates over the test dataset using the dataLoader
         with torch.no_grad():
             for data, target in self.dataLoader:
                 data, target = data.to(self.device), target.to(self.device)
-                output = self.model(data)
-                test_loss += self.criterion(output, target, reduction='sum').item()  # sum up batch loss
+                output = self.model(data)              #Feeds the input data through the global model to get predictions.
+
+                test_loss += self.criterion(output, target, reduction='sum').item()  # sum up batch loss between output and target
+                
                 if output.dim() == 1:
-                    pred = torch.round(torch.sigmoid(output))
+                    pred = torch.round(torch.sigmoid(output))    #If the output is one-dimensional, apply the sigmoid function and round the result to get a binary prediction (0 or 1).
                 else:
-                    pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-                correct += pred.eq(target.view_as(pred)).sum().item()
-                count += pred.shape[0]
-                conf += confusion_matrix(target.cpu(),pred.cpu(), labels = [i for i in range(10)])
-                f1 += f1_score(target.cpu(), pred.cpu(), average = 'weighted')*count
+                    pred = output.argmax(dim=1, keepdim=True)  # If the output is a logits tensor with multiple dimensions, use argmax to select the class with the highest probability.
+
+                correct += pred.eq(target.view_as(pred)).sum().item()    #number of correct predictions
+                count += pred.shape[0]                                   #number of predictions
+                conf += confusion_matrix(target.cpu(),pred.cpu(), labels = [i for i in range(10)])    #calculate global confusion matrix
+                f1 += f1_score(target.cpu(), pred.cpu(), average = 'weighted')*count          #calculate global f1 score   
                 c+=count
-        test_loss /= count
-        accuracy = 100. * correct / count
-        print(conf.astype(int))
-        print(f1/c)
-        self.model.cpu()  ## avoid occupying gpu when idle
+
+        test_loss /= count                             # Computes the average test loss.
+        accuracy = 100. * correct / count              # Calculates the accuracy percentage.
+
+        #print results
+        print(conf.astype(int))                        # Prints the confusion matrix with integer values.
+        print(f1/c)                                    # Prints the final weighted F1-score.
+        self.model.cpu()                               # avoid occupying gpu when idle
         print(
             '[Server] Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, count, accuracy))
         return test_loss, accuracy
@@ -86,6 +96,8 @@ class Server():
         utils = Backdoor_Utils()
         with torch.no_grad():
             for data, target in self.dataLoader:
+                
+                #corrupting dataset
                 data, target = utils.get_poison_batch(data, target, backdoor_fraction=1,
                                                       backdoor_label=utils.backdoor_label, evaluation=True)
                 data, target = data.to(self.device), target.to(self.device)
@@ -115,6 +127,8 @@ class Server():
         utils = SemanticBackdoor_Utils()
         with torch.no_grad():
             for data, target in self.dataLoader:
+
+                #corrupting dataset
                 data, target = utils.get_poison_batch(data, target, backdoor_fraction=1,
                                                       backdoor_label=utils.backdoor_label, evaluation=True)
                 data, target = data.to(self.device), target.to(self.device)
@@ -135,22 +149,23 @@ class Server():
                                                                                                              accuracy))
         return test_loss, accuracy, data, pred
 
+    #train the server model by getting all the clients info (ie weight update) and updating the global model, redistributing it until convergence
     def train(self, group):
-        selectedClients = [self.clients[i] for i in group]
-        for c in selectedClients:
-            c.train()
-            c.update()
+        selectedClients = [self.clients[i] for i in group]       # get all clients
+        for c in selectedClients:             
+            c.train()                   # launch training for each client
+            c.update()                  # update clients models
 
         if self.isSaveChanges:
             self.saveChanges(selectedClients)
             
         tic = time.perf_counter()
-        Delta = self.AR(selectedClients)
+        Delta = self.AR(selectedClients)      # back to the server, get clients weight update, aggregated accorting to the aggregation rule       
         toc = time.perf_counter()
         print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
 
         for param in self.model.state_dict():
-            self.model.state_dict()[param] += Delta[param]
+            self.model.state_dict()[param] += Delta[param]         # update model parameters
         self.iter += 1
         return 0
 

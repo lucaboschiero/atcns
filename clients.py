@@ -49,7 +49,7 @@ class Client():
         self.isTrained = True
         self.model.cpu()  ## avoid occupying gpu when idle
 
-    def test(self, testDataLoader):
+    def test(self, testDataLoader):            
         self.model.to(self.device)
         self.model.eval()
         test_loss = 0
@@ -71,7 +71,7 @@ class Client():
                                                                                               100. * correct / len(
                                                                                                   testDataLoader.dataset)))
 
-    def update(self):
+    def update(self):          #locally performs weight update
         assert self.isTrained, 'nothing to update, call train() to obtain gradients'
         newState = self.model.state_dict()
         for param in self.originalState:
