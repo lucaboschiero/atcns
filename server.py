@@ -247,7 +247,7 @@ class Server():
             raise ValueError("Not a valid aggregation rule or aggregation rule not implemented")
 
     def FedAvg(self, clients):
-        out = self.FedFuncWholeNet(clients, lambda arr: torch.mean(arr, dim=-1, keepdim=True))
+        out = self.FedFuncWholeNet(clients, lambda arr: torch.mean(arr, dim=-1, keepdim=True))  # arr is the imput to this lambda function, that computes the mean of the tensor arr
         return out
 
     def FedMedian(self, clients):
@@ -310,8 +310,8 @@ class Server():
         ## Helper functions, act as adaptor from aggregation function to the federated learning system##
         
     def mst(self, clients) :
-        from rules.mst import Net
-        self.Net = Net
+        from rules.mst import Net         #import net from rules/mst.py
+        self.Net = Net                    # non ho capito perchè questo (cioè perchè assegna net a self.Net?)
         out,attackers = self.FedFuncWholeNet(clients, lambda arr: Net().cpu()(arr.cpu()))
         return out,attackers
     
@@ -323,27 +323,29 @@ class Server():
 
     def FedFuncWholeNet(self, clients, func):
         '''
+        Returns the weight update of the server model by applying the aggregation rule to the weight updates of the clients.
         The aggregation rule views the update vectors as stacked vectors (1 by d by n).
         '''
-        Delta = deepcopy(self.emptyStates)
-        deltas = [c.getDelta() for c in clients]
-        vecs = [utils.net2vec(delta) for delta in deltas]
-        vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]
-        result = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
+        Delta = deepcopy(self.emptyStates)           # Delta is an empty copy of the whole net structure, used to contain the updated weights after aggregation
+        deltas = [c.getDelta() for c in clients]     # gets the weight updates of each client
+        vecs = [utils.net2vec(delta) for delta in deltas]              # transforms all deltas into vectors of dimension 1
+        vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]      # filters values to keep only finite ones
+        result = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n, apply the aggregation function
         result = result.view(-1)
-        utils.vec2net(result, Delta)
-        return Delta
+        utils.vec2net(result, Delta)     # converts back the resulting vectors to the network structure
+        return Delta                     # quando viene aggiornato Delta???
 
     def FedFuncWholeStateDict(self, clients, func):
         '''
+        Returns the weight update of the server model by applying the aggregation rule to the weight updates of the clients, for more complex scenario.
         The aggregation rule views the update vectors as a set of state dict.
         '''
         Delta = deepcopy(self.emptyStates)
         deltas = [c.getDelta() for c in clients]
         # sanity check, remove update vectors with nan/inf values
-        deltas = [delta for delta in deltas if torch.isfinite(utils.net2vec(delta)).all().item()]
+        deltas = [delta for delta in deltas if torch.isfinite(utils.net2vec(delta)).all().item()]   # removes all infinite/null deltas
 
-        resultDelta = func(deltas)
+        resultDelta = func(deltas)       # apply the aggregation rule (used in )
 
         Delta.update(resultDelta)
         return Delta
