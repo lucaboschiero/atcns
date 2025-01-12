@@ -33,7 +33,7 @@ def getNetMeta(Delta) -> (dict, dict):
     return shapes, sizes
 
 
-def vec2net(vec: torch.Tensor, net) -> None:
+def vec2net(vec: torch.Tensor, net) -> None:               # contadiction: in the signature the return value is None, but the function actually returns net
     '''
     convert a 1 dimension Tensor to state dict
     
