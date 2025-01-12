@@ -5,11 +5,16 @@ except :
     print("Running Without GPU")
 import parser
 import _main
+from utils.logger import get_logger
+
+# Get the logger
+logger = get_logger()
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    print("#" * 64)
+    logger.info("Starting the execution!")
+    logger.info("#" * 64)
     for i in vars(args):
-        print(f"#{i:>40}: {str(getattr(args, i)):<20}#")
-    print("#" * 64)
+        logger.info(f"#{i:>40}: {str(getattr(args, i)):<20}#")
+    logger.info("#" * 64)
     _main.main(args)
