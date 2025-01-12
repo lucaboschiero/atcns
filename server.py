@@ -158,16 +158,22 @@ class Server():
 
         if self.isSaveChanges:
             self.saveChanges(selectedClients)
-            
+        
+
+        attackers = 0
         tic = time.perf_counter()
-        Delta = self.AR(selectedClients)      # back to the server, get clients weight update, aggregated accorting to the aggregation rule       
+        if (self.AR == self.FedAvg or self.AR == self.FedMedian or self.AR == self.geometricMedian or self.AR == self.krum or self.AR == self.mkrum):
+            Delta = self.AR(selectedClients)      # back to the server, get clients weight update, aggregated accorting to the aggregation rule
+        else: 
+            Delta, attackers = self.AR(selectedClients)
+
         toc = time.perf_counter()
         print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
 
         for param in self.model.state_dict():
             self.model.state_dict()[param] += Delta[param]         # update model parameters
         self.iter += 1
-        return 0
+        return attackers
 
     def saveChanges(self, clients):
 
@@ -275,13 +281,13 @@ class Server():
     def foolsGold(self, clients):
         from rules.foolsGold import Net
         self.Net = Net
-        out,attackers = self.FedFuncWholeNet(clients, lambda arr: Net().cpu()(arr.cpu()))
+        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
         return out,attackers
         
     def contra(self, clients):
         from rules.contra import Net
         self.Net = Net
-        out,attackers = self.FedFuncWholeNet(clients, lambda arr: Net().cpu()(arr.cpu()))
+        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
         return out,attackers    
 
     def residualBase(self, clients):
@@ -312,13 +318,13 @@ class Server():
     def mst(self, clients) :
         from rules.mst import Net         #import net from rules/mst.py
         self.Net = Net                    # non ho capito perchè questo (cioè perchè assegna net a self.Net?)
-        out,attackers = self.FedFuncWholeNet(clients, lambda arr: Net().cpu()(arr.cpu()))
+        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
         return out,attackers
     
     def k_densest(self, clients) :
         from rules.density import Net
         self.Net = Net
-        out,attackers = self.FedFuncWholeNet(clients, lambda arr: Net().cpu()(arr.cpu()))
+        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
         return out,attackers
 
     def FedFuncWholeNet(self, clients, func):
@@ -334,6 +340,19 @@ class Server():
         result = result.view(-1)
         utils.vec2net(result, Delta)     # converts back the resulting vectors to the network structure
         return Delta                     # quando viene aggiornato Delta???
+    
+    def FedFuncWholeNetAttackers(self, clients, func):
+        '''
+        The aggregation rule views the update vectors as stacked vectors (1 by d by n).
+        '''
+        Delta = deepcopy(self.emptyStates)
+        deltas = [c.getDelta() for c in clients]
+        vecs = [utils.net2vec(delta) for delta in deltas]
+        vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]
+        result, attackers = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
+        result = result.view(-1)
+        utils.vec2net(result, Delta)
+        return Delta, attackers
 
     def FedFuncWholeStateDict(self, clients, func):
         '''
