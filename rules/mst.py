@@ -4,6 +4,10 @@ import networkx as nx
 
 import numpy as np
 from rules.correlations import C 
+import matplotlib.pyplot as plt
+from utils.logger import get_logger
+
+logger = get_logger()
 
 def find(i,parent):           # searches for the parent of the group too which the node i belongs to
 	while parent[i] != i:
@@ -25,6 +29,8 @@ def fun(input):                           # input contains the clients weight up
     G.add_nodes_from([i for i in range(n)])   # add n nodes to the graph
     cost = C(input,n)                         # correlation matrix
 
+    logger.info(cost)
+
     edge_count = 0       # counter for the edges 
     while edge_count < n - 2:               # the loop searches for the non connected nodes with higher correlation values
         max = -1* INF                       # initialization of max to -infinite (-oo)
@@ -40,6 +46,16 @@ def fun(input):                           # input contains the clients weight up
         G.add_edge(a,b)                      # adds the connection to the graph by adding an edge
         edge_count += 1
         maxcost += max
+
+    """# Visualize and save the graph
+    plt.figure(figsize=(8, 6))  # Set the figure size
+    pos = nx.spring_layout(G)  # Position nodes using the spring layout
+    nx.draw(G, pos, with_labels=True, node_size=700, node_color="lightblue", font_weight="bold")
+    labels = nx.get_edge_attributes(G, 'weight')  # Get edge weights
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)  # Draw edge labels
+    plt.title("Graph Visualization")
+    plt.savefig("graph.png")  # Save the graph as an image
+    plt.show()  # Display the graph"""
 
     UG = G.to_undirected()         # converts the graph to undirected graph (no "arrows" i.e. no directions)
     sub_graphs = [UG.subgraph(c) for c in nx.connected_components(UG)]        # find sub-graphs of nodes
@@ -58,15 +74,17 @@ def fun(input):                           # input contains the clients weight up
             p = [j for j in range(n) if j not in k]
             break
         #d = np.average([np.sum(cost[x[0]]) for x in f])
+        
+        print("F", f)
         d = np.median([cost[x[0]][x[1]] for x in f])       # median of the weights in the subgraph
-        print(f"Iter {i}, d: {d}")
-        print(f"Iter {i}, k: {k}")
+        logger.info(f"Iter {i}, d: {d}")
+        logger.info(f"Iter {i}, k: {k}")
         if d > min_d :                  # if the median is higher then the former one, update it and save the nodes as attackers
             min_d = d
             p = k
     input = input.squeeze(0)        
     out = torch.mean(input[:,[i for i in range(n) if i not in p]], dim=1, keepdim=True)        # calculates the aggregated weight update, considering only benign clients
-    print(f"Iter {i}, attackers: {p}")             # questi print dove sono? Non riesco a trovarli quando eseguo
+    logger.info(f"Attackers: {p}")             # questi print dove sono? Non riesco a trovarli quando eseguo
     return out,p
 
 

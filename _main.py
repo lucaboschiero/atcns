@@ -8,7 +8,10 @@ from tensorboardX import SummaryWriter
 from clients_attackers import *
 from server import Server
 
+from utils.logger import get_logger
 
+# Get the logger
+logger = get_logger()
 
 def main(args):
     print('#####################')
@@ -161,8 +164,11 @@ def main(args):
     for j in range(args.epochs):                      # for each epoch
         steps = j + 1
 
-        print('\n\n########EPOCH %d ########' % j)
-        print('###Model distribution###\n')
+        #print('\n\n########EPOCH %d ########' % j)
+        #print('###Model distribution###\n')
+        logger.info('########EPOCH %d ########' % j)
+        logger.info('###Model distribution###')
+        
         server.distribute()                            #distribute the model to all clients
         #         group=Random().sample(range(5),1)
         group = range(args.num_clients)                #integer from 0 to num_clients

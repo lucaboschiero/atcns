@@ -13,6 +13,10 @@ from utils import utils
 from utils.backdoor_semantic_utils import SemanticBackdoor_Utils
 from utils.backdoor_utils import Backdoor_Utils
 import time
+from utils.logger import get_logger
+
+# Get the logger
+logger = get_logger()
 
 class Server():
     def __init__(self, model, dataLoader, criterion=F.nll_loss, device='cpu'):
@@ -45,7 +49,8 @@ class Server():
             c.setModelParameter(self.model.state_dict())
 
     def test(self):
-        print("[Server] Start testing")
+        #print("[Server] Start testing")
+        logger.info("[Server] Start testing")
         self.model.to(self.device)          #Moves the model to the appropriate device (CPU or GPU) for testing.
         self.model.eval()                   #Puts the model in evaluation mode (disables dropout, batch normalization updates, etc.).
         
@@ -80,15 +85,15 @@ class Server():
         accuracy = 100. * correct / count              # Calculates the accuracy percentage.
 
         #print results
-        print(conf.astype(int))                        # Prints the confusion matrix with integer values.
-        print(f1/c)                                    # Prints the final weighted F1-score.
+        logger.info(conf.astype(int))                        # Prints the confusion matrix with integer values.
+        logger.info(f1/c)                                    # Prints the final weighted F1-score.
         self.model.cpu()                               # avoid occupying gpu when idle
-        print(
+        logger.info(
             '[Server] Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, count, accuracy))
         return test_loss, accuracy
 
     def test_backdoor(self):
-        print("[Server] Start testing backdoor\n")
+        logger.info("[Server] Start testing backdoor\n")
         self.model.to(self.device)
         self.model.eval()
         test_loss = 0
@@ -110,7 +115,7 @@ class Server():
         accuracy = 100. * correct / len(self.dataLoader.dataset)
 
         self.model.cpu()  ## avoid occupying gpu when idle
-        print(
+        logger.info(
             '[Server] Test set (Backdoored): Average loss: {:.4f}, Success rate: {}/{} ({:.0f}%)\n'.format(test_loss, correct,
                                                                                                     len(
                                                                                                         self.dataLoader.dataset),
@@ -168,7 +173,8 @@ class Server():
             Delta, attackers = self.AR(selectedClients)
 
         toc = time.perf_counter()
-        print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
+        #print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
+        logger.info(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.")
 
         for param in self.model.state_dict():
             self.model.state_dict()[param] += Delta[param]         # update model parameters

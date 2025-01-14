@@ -5,7 +5,7 @@ import os
 def get_logger(name='atcns_logger', log_file='atcnsProject.log', level=logging.DEBUG):
     """
     Crea un logger che scrive sia su console che su file.
-    
+
     :param name: Nome del logger
     :param log_file: Nome del file di log
     :param level: Livello di log (default DEBUG)
@@ -19,21 +19,23 @@ def get_logger(name='atcns_logger', log_file='atcnsProject.log', level=logging.D
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    # Formato del log
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # Verifica se il logger ha già handler per evitare duplicati
+    if not logger.hasHandlers():
+        # Formato del log
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    # Handler per la console
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(level)
-    console_handler.setFormatter(formatter)
+        # Handler per la console
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(level)
+        console_handler.setFormatter(formatter)
 
-    # Handler per il file
-    file_handler = logging.FileHandler(log_path)
-    file_handler.setLevel(level)
-    file_handler.setFormatter(formatter)
+        # Handler per il file
+        file_handler = logging.FileHandler(log_path)
+        file_handler.setLevel(level)
+        file_handler.setFormatter(formatter)
 
-    # Aggiungi gli handler al logger
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+        # Aggiungi gli handler al logger
+        logger.addHandler(console_handler)
+        logger.addHandler(file_handler)
 
     return logger
