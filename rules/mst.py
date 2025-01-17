@@ -43,19 +43,21 @@ def fun(input):                           # input contains the clients weight up
                     a = i
                     b = j
         parent = union(a, b, parent)         # connects the nodes 
-        G.add_edge(a,b)                      # adds the connection to the graph by adding an edge
+        G.add_edge(a,b, weight=round(max, 3))                      # adds the connection to the graph by adding an edge
         edge_count += 1
         maxcost += max
 
     """# Visualize and save the graph
     plt.figure(figsize=(8, 6))  # Set the figure size
-    pos = nx.spring_layout(G)  # Position nodes using the spring layout
+    pos = nx.spring_layout(G)   # Position nodes using the spring layout
     nx.draw(G, pos, with_labels=True, node_size=700, node_color="lightblue", font_weight="bold")
+
+    # Add edge labels to display weights
     labels = nx.get_edge_attributes(G, 'weight')  # Get edge weights
     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)  # Draw edge labels
-    plt.title("Graph Visualization")
-    plt.savefig("graph.png")  # Save the graph as an image
-    plt.show()  # Display the graph"""
+    plt.title("Graph with Edge Weights")
+    #plt.savefig("graph2.png")  # Save the graph as an image
+    plt.show()"""
 
     UG = G.to_undirected()         # converts the graph to undirected graph (no "arrows" i.e. no directions)
     sub_graphs = [UG.subgraph(c) for c in nx.connected_components(UG)]        # find sub-graphs of nodes

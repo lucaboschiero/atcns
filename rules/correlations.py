@@ -17,4 +17,5 @@ def C(input,n):
           a[i,j] = 0
         else :
           a[i,j] = 1 - spatial.distance.cosine(input[:,i],input[:,j])
+          #a[i, j] = np.corrcoef(input[:, i], input[:, j])[0, 1]
     return a
