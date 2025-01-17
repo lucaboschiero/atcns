@@ -77,7 +77,7 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
     silhouette_scores = []
     cluster_results = {}
 
-    for k in range(2, min(max_k, n - 1) + 1):
+    for k in range(2,  n):
         kmeans = KMeans(n_clusters=k, n_init='auto', max_iter=max_iters, tol=tol, random_state=0)
         labels = kmeans.fit_predict(X)
         silhouette_scores.append(silhouette_score(X, labels))
@@ -104,35 +104,72 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
     for idx, label in enumerate(labels):
         cluster_nodes[label].append(idx)
 
-    max = -1*n
-
-    b = []  # benign clients
-    a = []  # attackers
     # Convert to a regular dictionary
     cluster_nodes = dict(cluster_nodes)
-    print(cluster_nodes)
+    
+    # To store the median scores of the correlation matrix for each cluster
+    cluster_medians = {}
+
     # Print nodes in each cluster
     for cluster, nodes in cluster_nodes.items():
         print(f"Cluster {cluster}: Nodes {nodes}")
-        for node in nodes:
-            for node2 in nodes:
-                if node != node2 and cost[node][node2] > max:
-                    max = cost[node][node2]
+        cluster_cost = []
+        for i in range(len(nodes)):
+            for j in range(i + 1, len(nodes)):  # Avoid duplicates (i, j) == (j, i)
+                node1 = nodes[i]
+                node2 = nodes[j]
+                cluster_cost.append(cost[node1][node2])
     
-    """# Classify points
-    for i, size in enumerate(cluster_sizes):
-        if size > min_cluster_size:  # Clusters larger than the smallest cluster are benign
-            benign_indices.extend(np.where(labels == i)[0])
-        else:  # Smallest clusters are considered attackers
-            attackers.extend(np.where(labels == i)[0])
+        # Calculate the median of the collected values
+        if cluster_cost:
+            median_value = np.median(cluster_cost)
+        else:
+            median_value = None  # Handle cases with no pairwise values (e.g., single node clusters)
+        
+        cluster_medians[cluster] = median_value
 
-    # Aggregate benign points
-    benign_indices = np.array(benign_indices)
-    input_np = input.squeeze(0).numpy()  # Shape: (d, n)
-    benign_points = input_np[:, benign_indices] if len(benign_indices) > 0 else np.zeros((d, 1))
-    out = torch.tensor(np.mean(benign_points, axis=1, keepdims=True), dtype=torch.float32)  # Shape: (d, 1)"""
+    min = +1*n
 
-    #return out.unsqueeze(0), attackers, best_k  # Shape: (1, d, 1), list of attackers, optimal k
+    # Initialize empty lists to store benign clients, attackers, and temporary nodes
+    benign_clients = []
+    attackers = []
+    temp_nodes = []
+
+    # Print the median scores for each cluster
+    for cluster, median in cluster_medians.items():
+        # Print the median score for the current cluster
+        print(f"Cluster {cluster}: Median Score {median}")
+        
+        # If the current cluster's median is smaller than the previously tracked minimum median
+        if median < min:
+            # Update the minimum median value
+            min = median
+            
+            # If there were previous nodes in the temp_nodes list, add them to the attackers list
+            if temp_nodes:
+                attackers += temp_nodes
+            
+            # Add the current cluster's nodes to the temp_nodes list
+            for node in cluster_nodes[cluster]:
+                temp_nodes.append(node)
+        else:
+            # If the current cluster's median is not the smallest, consider it benign (non-attacker)
+            # Add the current cluster's nodes directly to the attackers list
+            for node in cluster_nodes[cluster]:
+                attackers.append(node)
+            
+            # Reset temp_nodes as the current cluster does not have the smallest median
+            temp_nodes = []
+            
+
+    print("Attackers: ", attackers)
+
+    benign_clients.append([j for j in range(n) if j not in attackers])
+    print("Benign clients:", benign_clients)
+
+    out = torch.mean(input[:,[i for i in range(n) if i not in attackers]], dim=1, keepdim=True)
+
+    return out, attackers
 
 
 class Net(nn.Module):
