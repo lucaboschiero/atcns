@@ -29,10 +29,11 @@ def fun(input):                           # input contains the clients weight up
     G.add_nodes_from([i for i in range(n)])   # add n nodes to the graph
     cost = C(input,n)                         # correlation matrix
 
-    logger.info(cost)
+    #logger.info(cost)
 
     edge_count = 0       # counter for the edges 
-    while edge_count < n - 2:               # the loop searches for the non connected nodes with higher correlation values
+    while edge_count < n - 2:               # the loop searches for the non connected nodes with higher correlation values --- 2 subgraphs
+    #while edge_count < n - 3:               # the loop searches for the non connected nodes with higher correlation values --- 3 subgraphs
         max = -1* INF                       # initialization of max to -infinite (-oo)
         a = -1
         b = -1
@@ -56,34 +57,42 @@ def fun(input):                           # input contains the clients weight up
     labels = nx.get_edge_attributes(G, 'weight')  # Get edge weights
     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)  # Draw edge labels
     plt.title("Graph with Edge Weights")
-    #plt.savefig("graph2.png")  # Save the graph as an image
+    plt.savefig("graph3.png")  # Save the graph as an image
     plt.show()"""
 
     UG = G.to_undirected()         # converts the graph to undirected graph (no "arrows" i.e. no directions)
     sub_graphs = [UG.subgraph(c) for c in nx.connected_components(UG)]        # find sub-graphs of nodes
-    min_d = -1*n
+    min_d = +1*n
     p = []             # vector containing attackers
     k = [[],[]]        # vector containing valid nodes for each subgraph
+    temp_nodes = []
+
     for i, sg in enumerate(sub_graphs) :              # for each subgraph, calculates the median weights
         k = [int(j) for j in sg.nodes]                # vector of integers representing nodes in the subgraphs
         f = [j for j in sg.edges.data("weight")]      # weights of the edges in the subgraph
         #print(f)
         #print([cost[x[0]] for x in f])
         if len(k) < 2 :                               # searches for the subgraph with maximum median weight to select valid nodes, nodes that are not included are considered attackers (vector p)
-            p = k                                     # if there are less than 2 nodes in the subgraph, it is an attacker
-            break
+            p += k                                     # if there are less than 2 nodes in the subgraph, it is an attacker
+            continue
         if len(k) > n-2 :                             # if more than n-2, all nodes in the subgraph are benign, the others are attackers
-            p = [j for j in range(n) if j not in k]
-            break
+            p += [j for j in range(n) if j not in k]
+            continue
         #d = np.average([np.sum(cost[x[0]]) for x in f])
         
-        print("F", f)
+        #print("F", f)
         d = np.median([cost[x[0]][x[1]] for x in f])       # median of the weights in the subgraph
         logger.info(f"Iter {i}, d: {d}")
         logger.info(f"Iter {i}, k: {k}")
-        if d > min_d :                  # if the median is higher then the former one, update it and save the nodes as attackers
+        if d < min_d :                  # if the median is higher then the former one, update it and save the nodes as attackers
             min_d = d
-            p = k
+            if temp_nodes: 
+                p += temp_nodes
+            temp_nodes = k
+        else:
+            p += k
+            temp_nodes = []
+
     input = input.squeeze(0)        
     out = torch.mean(input[:,[i for i in range(n) if i not in p]], dim=1, keepdim=True)        # calculates the aggregated weight update, considering only benign clients
     logger.info(f"Attackers: {p}")             # questi print dove sono? Non riesco a trovarli quando eseguo

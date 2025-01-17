@@ -161,7 +161,7 @@ def main(args):
         writer.add_scalar('test/loss_backdoor', loss, steps)
         writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
 
-    for j in range(args.epochs):                      # for each epoch
+    for j in range(args.epochs + 5):                      # for each epoch
         steps = j + 1
 
         #print('\n\n########EPOCH %d ########' % j)
@@ -172,7 +172,7 @@ def main(args):
         server.distribute()                            #distribute the model to all clients
         #         group=Random().sample(range(5),1)
         group = range(args.num_clients)                #integer from 0 to num_clients
-        attackers = server.train(group)                #train the clients
+        attackers = server.train(group, j)                #train the clients
         #         server.train_concurrent(group)
 
         loss, accuracy = server.test()               # launch again testing

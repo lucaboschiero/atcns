@@ -155,7 +155,7 @@ class Server():
         return test_loss, accuracy, data, pred
 
     #train the server model by getting all the clients info (ie weight update) and updating the global model, redistributing it until convergence
-    def train(self, group):
+    def train(self, group, epoch):
         selectedClients = [self.clients[i] for i in group]       # get all clients
         for c in selectedClients:             
             c.train()                   # launch training for each client
@@ -166,15 +166,18 @@ class Server():
         
 
         attackers = 0
-        tic = time.perf_counter()
-        if (self.AR == self.FedAvg or self.AR == self.FedMedian or self.AR == self.geometricMedian or self.AR == self.krum or self.AR == self.mkrum):
-            Delta = self.AR(selectedClients)      # back to the server, get clients weight update, aggregated accorting to the aggregation rule
-        else: 
-            Delta, attackers = self.AR(selectedClients)
+        if epoch < 0:
+            Delta = self.FedAvg(selectedClients)
+        else:
+            tic = time.perf_counter()
+            if (self.AR == self.FedAvg or self.AR == self.FedMedian or self.AR == self.geometricMedian or self.AR == self.krum or self.AR == self.mkrum):
+                Delta = self.AR(selectedClients)      # back to the server, get clients weight update, aggregated accorting to the aggregation rule
+            else: 
+                Delta, attackers = self.AR(selectedClients)
 
-        toc = time.perf_counter()
-        #print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
-        logger.info(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.")
+            toc = time.perf_counter()
+            #print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
+            logger.info(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.")
 
         for param in self.model.state_dict():
             self.model.state_dict()[param] += Delta[param]         # update model parameters
@@ -255,6 +258,8 @@ class Server():
             self.AR = self.thresholding
         elif ar == 'pca' :
             self.AR = self.pca    
+        elif ar == 'kmeans' :
+            self.AR = self.k_means   
         else:
             raise ValueError("Not a valid aggregation rule or aggregation rule not implemented")
 
@@ -329,6 +334,12 @@ class Server():
     
     def k_densest(self, clients) :
         from rules.density import Net
+        self.Net = Net
+        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out,attackers
+    
+    def k_means(self,clients):
+        from rules.kmeans import Net
         self.Net = Net
         out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
         return out,attackers
