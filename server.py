@@ -166,7 +166,7 @@ class Server():
         
 
         attackers = 0
-        if epoch < 0:
+        if epoch < 5:
             Delta = self.FedAvg(selectedClients)
         else:
             tic = time.perf_counter()
@@ -342,7 +342,7 @@ class Server():
         from rules.kmeans import Net
         self.Net = Net
         out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
-        return out,attackers
+        return out, attackers
 
     def FedFuncWholeNet(self, clients, func):
         '''

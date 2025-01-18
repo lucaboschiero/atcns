@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import pairwise_distances_argmin
 import torch
 import torch.nn as nn
 from sklearn.metrics import silhouette_score
 from sklearn.cluster import KMeans
 from collections import defaultdict
+from copy import deepcopy
 
 import numpy as np
 from rules.correlations import C 
@@ -70,8 +70,10 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
     if n < 2:
         raise ValueError("Not enough points for clustering.")
 
+    inputT = deepcopy(input)
+
     # Convert input tensor to numpy for clustering
-    X = input.squeeze(0).T.numpy()  # Shape: (n, d)
+    X = inputT.squeeze(0).T.numpy()  # Shape: (n, d)
 
     # Try different values of k and calculate silhouette scores
     silhouette_scores = []
@@ -167,7 +169,9 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
     benign_clients.append([j for j in range(n) if j not in attackers])
     print("Benign clients:", benign_clients)
 
-    out = torch.mean(input[:,[i for i in range(n) if i not in attackers]], dim=1, keepdim=True)
+    input = input.squeeze(0)  
+
+    out = torch.mean(input[:, [i for i in range(n) if i not in attackers]], dim=1, keepdim=True)
 
     return out, attackers
 
