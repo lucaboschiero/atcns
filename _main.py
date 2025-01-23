@@ -4,14 +4,27 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from tensorboardX import SummaryWriter
+import pandas as pd
 
 from clients_attackers import *
 from server import Server
+import os
 
 from utils.logger import get_logger
 
 # Get the logger
 logger = get_logger()
+
+# Function to initialize the log table if it doesn't exist
+def initialize_log_table(filepath, columns):
+    if not os.path.exists(filepath):
+        # Create an empty DataFrame with specified columns
+        log_table = pd.DataFrame(columns=columns)
+        # Save to CSV
+        log_table.to_csv(filepath, index=False)
+        print(f"Log table initialized at {filepath}")
+    else:
+        print(f"Log table already exists at {filepath}")
 
 def main(args):
     print('#####################')
@@ -144,7 +157,7 @@ def main(args):
                                                  args.inner_epochs)
         else:
             client_i = Client(i, model, trainData[i], optimizer, criterion, device, args.inner_epochs)   #good clients
-
+            
         server.attach(client_i)         #add clients objects to the server
 
     loss, accuracy = server.test()           #test to get accuracy result before training
@@ -161,7 +174,10 @@ def main(args):
         writer.add_scalar('test/loss_backdoor', loss, steps)
         writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
 
-    for j in range(args.epochs + 5):                      # for each epoch
+    list_attackers = [index for index, value in enumerate(label) if value == 0]
+    ED_epoch = '*'
+
+    for j in range(args.epochs):                      # for each epoch
         steps = j + 1
 
         #print('\n\n########EPOCH %d ########' % j)
@@ -174,8 +190,14 @@ def main(args):
         group = range(args.num_clients)                #integer from 0 to num_clients
         attackers = server.train(group, j)                #train the clients
         #         server.train_concurrent(group)
+        print("ATTACKERS: ", attackers)
+        print("LIST ATTACKERS: ", list_attackers)
+        print("ED: ", ED_epoch)
+        if attackers == list_attackers:
+            if ED_epoch == '*':
+                ED_epoch = j
 
-        loss, accuracy = server.test()               # launch again testing
+        loss, Testaccuracy = server.test()               # launch again testing
 
         writer.add_scalar('test/loss', loss, steps)
         writer.add_scalar('test/accuracy', accuracy, steps)
@@ -193,3 +215,46 @@ def main(args):
             writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
 
     writer.close()
+
+    # Table for accuracy
+    # Initialize the filepath
+    filepath = "./logs/Mnist/Accuracy/0,5SF.csv"
+    # Initialize the log table
+    initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
+    n_attackers = sum(1 for i in label if i == 0)
+    percentageOfAttackers = (n_attackers / args.num_clients) * 100
+    add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=Testaccuracy)
+
+    # Table for early detection
+    # Initialize the filepath
+    filepath = "./logs/Mnist/EarlyDetection/0,5SF.csv"
+    # Initialize the log table
+    initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
+    add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ED_epoch)
+
+
+def add_or_update_row(filepath, attackers_percentage, column_name, value):
+    # Load the existing log table
+    log_table = pd.read_csv(filepath)
+    # Check if a row with the given % of attackers already exists
+    row_index = log_table.index[log_table["% of attackers"] == attackers_percentage].tolist()
+    
+    if row_index:
+        # Row exists; update the specified column
+        log_table.at[row_index[0], column_name] = value
+        print(f"Updated row: % of attackers = {attackers_percentage}, {column_name} = {value}")
+    else:
+        # Row does not exist; create a new one
+        new_row = {
+            "% of attackers": attackers_percentage,
+            "mst": value if column_name == "mst" else None,
+            "density": value if column_name == "density" else None,
+            "kmeans": value if column_name == "kmeans" else None,
+        }
+        # Replace append with concat
+        new_row_df = pd.DataFrame([new_row])  # Convert the new row to a DataFrame
+        log_table = pd.concat([log_table, new_row_df], ignore_index=True)
+        print(f"Added new row: % of attackers = {attackers_percentage}, {column_name} = {value}")
+    
+    # Save back to the CSV
+    log_table.to_csv(filepath, index=False)

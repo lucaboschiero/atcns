@@ -104,7 +104,7 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
 
     print("BEST K: ", best_k)
 
-    #visualize_clusters(data_scaled, labels, centroids)
+    visualize_clusters(data_scaled, labels, centroids)
 
     cost = C(input,n)
 
