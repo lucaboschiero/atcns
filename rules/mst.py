@@ -32,8 +32,8 @@ def fun(input):                           # input contains the clients weight up
     #logger.info(cost)
 
     edge_count = 0       # counter for the edges 
-    while edge_count < n - 2:               # the loop searches for the non connected nodes with higher correlation values --- 2 subgraphs
-    #while edge_count < n - 3:               # the loop searches for the non connected nodes with higher correlation values --- 3 subgraphs
+    #while edge_count < n - 2:               # the loop searches for the non connected nodes with higher correlation values --- 2 subgraphs
+    while edge_count < n - 3:               # the loop searches for the non connected nodes with higher correlation values --- 3 subgraphs
         max = -1* INF                       # initialization of max to -infinite (-oo)
         a = -1
         b = -1

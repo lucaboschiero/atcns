@@ -166,7 +166,7 @@ class Server():
         
 
         attackers = 0
-        if epoch < 5:
+        if epoch < 3:
             Delta = self.FedAvg(selectedClients)
         else:
             tic = time.perf_counter()
@@ -353,6 +353,12 @@ class Server():
         deltas = [c.getDelta() for c in clients]     # gets the weight updates of each client
         vecs = [utils.net2vec(delta) for delta in deltas]              # transforms all deltas into vectors of dimension 1
         vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]      # filters values to keep only finite ones
+
+        # Print the L2 norm for each client's update vector
+        for i, vec in enumerate(vecs):
+            update_norm = torch.norm(vec, p=2).item()  # Compute L2 norm
+            logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm
+
         result = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n, apply the aggregation function
         result = result.view(-1)
         utils.vec2net(result, Delta)     # converts back the resulting vectors to the network structure
@@ -366,6 +372,12 @@ class Server():
         deltas = [c.getDelta() for c in clients]
         vecs = [utils.net2vec(delta) for delta in deltas]
         vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]
+
+        # Print the L2 norm for each client's update vector
+        for i, vec in enumerate(vecs):
+            update_norm = torch.norm(vec, p=2).item()  # Compute L2 norm
+            logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm
+
         result, attackers = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
         result = result.view(-1)
         utils.vec2net(result, Delta)
