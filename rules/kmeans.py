@@ -104,7 +104,7 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
 
     print("BEST K: ", best_k)
 
-    visualize_clusters(data_scaled, labels, centroids)
+    #visualize_clusters(data_scaled, labels, centroids)
 
     cost = C(input,n)
 
@@ -153,7 +153,7 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
             min_cluster = cluster
     
     benign_clients = cluster_nodes[min_cluster]      
-    attackers.append([i for i in range(n) if i not in benign_clients])
+    attackers += ([i for i in range(n) if i not in benign_clients])
 
     logger.info(f"Attackers: {attackers}")
 

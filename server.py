@@ -157,9 +157,16 @@ class Server():
     #train the server model by getting all the clients info (ie weight update) and updating the global model, redistributing it until convergence
     def train(self, group, epoch):
         selectedClients = [self.clients[i] for i in group]       # get all clients
+        altered_samples = []
         for c in selectedClients:             
-            c.train()                   # launch training for each client
+            sample = c.train()                   # launch training for each client
             c.update()                  # update clients models
+            altered_samples += sample
+        
+        # Remove duplicates by converting to a set and back to a list
+        altered_samples = list(set(altered_samples))
+        #print("Altered sample: ", altered_samples)
+        #print("Len: ", len(altered_samples))
 
         if self.isSaveChanges:
             self.saveChanges(selectedClients)

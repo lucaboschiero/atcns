@@ -176,6 +176,11 @@ def main(args):
 
     list_attackers = [index for index, value in enumerate(label) if value == 0]
     ED_epoch = '*'
+    false_positives_vec = []
+    attackers = 0
+    b = True  # To disable the defence mechanisms when all attacker identified correctly
+
+    remaining_clients = [] # Benign clients correct identified with detection mechanism
 
     for j in range(args.epochs):                      # for each epoch
         steps = j + 1
@@ -188,11 +193,23 @@ def main(args):
         server.distribute()                            #distribute the model to all clients
         #         group=Random().sample(range(5),1)
         group = range(args.num_clients)                #integer from 0 to num_clients
+        if ED_epoch != '*':
+            if b:
+                server.set_AR('fedavg')
+                b = False # Defense mechanism disabled
+                remaining_clients = [i for i in group if i not in attackers]
+            group = remaining_clients
+
         attackers = server.train(group, j)                #train the clients
         #         server.train_concurrent(group)
         print("ATTACKERS: ", attackers)
         print("LIST ATTACKERS: ", list_attackers)
         print("ED: ", ED_epoch)
+        if not isinstance(attackers, int):
+            if len(attackers) > 0:
+                false_positive = (len([i for i in attackers if label[i]==1])/ len(attackers)) *100
+                false_positives_vec.append(false_positive)
+                #print("FALSE POSITIVE: ", false_positive)
         if attackers == list_attackers:
             if ED_epoch == '*':
                 ED_epoch = j
@@ -231,6 +248,15 @@ def main(args):
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ED_epoch)
+
+    #Table for false positives
+    # Initialize the filepath
+    filepath = "./logs/Mnist/FP/0,5SF.csv"
+    # Initialize the log table
+    initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
+    FPmean = sum(false_positives_vec) / len(false_positives_vec)
+    print("False positive mean: ", FPmean)
+    add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=FPmean)
 
 
 def add_or_update_row(filepath, attackers_percentage, column_name, value):

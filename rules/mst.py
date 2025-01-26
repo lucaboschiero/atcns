@@ -86,12 +86,9 @@ def fun(input):                           # input contains the clients weight up
         logger.info(f"Iter {i}, k: {k}")
         if d < min_d :                  # if the median is higher then the former one, update it and save the nodes as attackers
             min_d = d
-            if temp_nodes: 
-                p += temp_nodes
             temp_nodes = k
-        else:
-            p += k
-            temp_nodes = []
+
+    p = [i for i in range(n) if i not in temp_nodes]
 
     input = input.squeeze(0)        
     out = torch.mean(input[:,[i for i in range(n) if i not in p]], dim=1, keepdim=True)        # calculates the aggregated weight update, considering only benign clients

@@ -87,6 +87,8 @@ class Backdoor_Utils():
         new_data = torch.empty(data.shape)
         new_targets = torch.empty(targets.shape)
 
+        new_data_indexes = []
+
         for index in range(0, len(data)):
             if evaluation:  # will poison all batch data when testing
                 new_targets[index] = backdoor_label
@@ -105,16 +107,19 @@ class Backdoor_Utils():
                         #print(self.trigger_position)
                     #    p = self.trigger_position
                 
-                
+                    new_data_indexes.append(index)
                 
                 else:
                     new_data[index] = data[index]
                     new_targets[index] = targets[index]
 
+
         new_targets = new_targets.long()
         if evaluation:
             new_data.requires_grad_(False)
             new_targets.requires_grad_(False)
+        else:
+            return new_data, new_targets, new_data_indexes
         return new_data, new_targets
 
     def setRandomTrigger(self,k=6,seed=None):
