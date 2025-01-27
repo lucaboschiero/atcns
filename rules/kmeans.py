@@ -137,10 +137,7 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
         # Calculate the median of the collected values
         if cluster_cost:
             median_value = np.median(cluster_cost)
-        else:
-            attackers.append(node for node in nodes)  # Handle cases with no pairwise values (e.g., single node clusters)
-        
-        cluster_medians[cluster] = median_value
+            cluster_medians[cluster] = median_value        
 
     min = +1*n
     min_cluster = None

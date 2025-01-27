@@ -160,16 +160,19 @@ def main(args):
             
         server.attach(client_i)         #add clients objects to the server
 
-    loss, accuracy = server.test()           #test to get accuracy result before training
+    loss, accuracy, labelflipping_asr = server.test()           #test to get accuracy result before training
     steps = 0
     writer.add_scalar('test/loss', loss, steps)
     writer.add_scalar('test/accuracy', accuracy, steps)
+
+    asr_backdoor_list = []
+    asr_labelflipping_list = []
 
     if 'BACKDOOR' in args.attacks.upper():
         if 'SEMANTIC' in args.attacks.upper():
             loss, accuracy, bdata, bpred = server.test_semanticBackdoor()     # test for semantic backdoor attack
         else:
-            loss, accuracy = server.test_backdoor()           # test for backdoor attack
+            loss, accuracy, backdoor_asr = server.test_backdoor()           # test for backdoor attack
 
         writer.add_scalar('test/loss_backdoor', loss, steps)
         writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
@@ -214,7 +217,11 @@ def main(args):
             if ED_epoch == '*':
                 ED_epoch = j
 
-        loss, Testaccuracy = server.test()               # launch again testing
+        loss, Testaccuracy, labelflipping_asr = server.test()               # launch again testing
+
+        if j > 3 and ED_epoch == '*':
+            asr_labelflipping_list.append(labelflipping_asr)
+
 
         writer.add_scalar('test/loss', loss, steps)
         writer.add_scalar('test/accuracy', accuracy, steps)
@@ -226,37 +233,72 @@ def main(args):
             if 'SEMANTIC' in args.attacks.upper():
                 loss, accuracy, bdata, bpred = server.test_semanticBackdoor()       # launch again testing for semantic backdoor attacks
             else:
-                loss, accuracy = server.test_backdoor()                              # launch again testing for backdoor attacks
+                loss, accuracy, backdoor_asr = server.test_backdoor()               # launch again testing for backdoor attacks
+                if j > 3 and ED_epoch == '*':                              
+                    asr_backdoor_list.append(backdoor_asr)
 
             writer.add_scalar('test/loss_backdoor', loss, steps)
             writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
 
+
+
     writer.close()
+
+    # Compute percentage of Label Flipping attacker
+    total = 0
+    s2 = ""
+
+    if len(attacker_list_labelFlipping) > 0:
+        s2 = "SF"
+        if len(attacker_list_backdoor) > 0:
+            total = (len(attacker_list_labelFlipping) / (len(attacker_list_labelFlipping) + len(attacker_list_backdoor)))
+            print("TOTAL : ", total)
+    else:
+        if len(attacker_list_multilabelFlipping) > 0:
+            s2 = "MF"
+        if len(attacker_list_backdoor) > 0:
+            total = (len(attacker_list_multilabelFlipping) / (len(attacker_list_multilabelFlipping) + len(attacker_list_backdoor)))
+            print("TOTAL : ", total)
+    
+    total_str = f"{total:.2f}".replace('.', ',')
+
+    # Compute the percentage of attacker
+    n_attackers = sum(1 for i in label if i == 0)
+    percentageOfAttackers = (n_attackers / args.num_clients) * 100
 
     # Table for accuracy
     # Initialize the filepath
-    filepath = "./logs/Mnist/Accuracy/0,5SF.csv"
+    filepath = f"./log/Mnist/Accuracy/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
-    n_attackers = sum(1 for i in label if i == 0)
-    percentageOfAttackers = (n_attackers / args.num_clients) * 100
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=Testaccuracy)
 
     # Table for early detection
     # Initialize the filepath
-    filepath = "./logs/Mnist/EarlyDetection/0,5SF.csv"
+    filepath = f"./logs/Mnist/EarlyDetection/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ED_epoch)
 
     #Table for false positives
     # Initialize the filepath
-    filepath = "./logs/Mnist/FP/0,5SF.csv"
+    filepath = f"./logs/Mnist/FP/{total_str}{s2}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold" "mst", "kmeans"])
     FPmean = sum(false_positives_vec) / len(false_positives_vec)
     print("False positive mean: ", FPmean)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=FPmean)
+
+    #Table for ASR
+    # Initialize the filepath
+    filepath = f"./logs/Mnist/ASR/{total_str}{s2}.csv"
+    # Initialize the log table
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold" "mst", "kmeans"])
+    ASR_backdoor = sum(asr_backdoor_list) / len(asr_backdoor_list)
+    ASR_labelFlipping = sum(asr_labelflipping_list) / len(asr_labelflipping_list)
+    ASR_total = f"{((ASR_backdoor + ASR_labelFlipping) / 2 * 100):.2f}"
+    print("ASR total: ", ASR_total)
+    add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ASR_total)
 
 
 def add_or_update_row(filepath, attackers_percentage, column_name, value):
@@ -273,8 +315,10 @@ def add_or_update_row(filepath, attackers_percentage, column_name, value):
         # Row does not exist; create a new one
         new_row = {
             "% of attackers": attackers_percentage,
-            "mst": value if column_name == "mst" else None,
+            "mstold": value if column_name == "mstold" else None,
             "density": value if column_name == "density" else None,
+            "foolsgold": value if column_name == "foolsgold" else None,
+            "mst": value if column_name == "mst" else None,
             "kmeans": value if column_name == "kmeans" else None,
         }
         # Replace append with concat

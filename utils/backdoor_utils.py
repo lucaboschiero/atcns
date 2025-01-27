@@ -87,16 +87,24 @@ class Backdoor_Utils():
         new_data = torch.empty(data.shape)
         new_targets = torch.empty(targets.shape)
 
-        new_data_indexes = []
-
+        altered_samples = []
         for index in range(0, len(data)):
-            if evaluation:  # will poison all batch data when testing
-                new_targets[index] = backdoor_label
-                new_data[index] = self.add_backdoor_pixels(data[index])
-            #                 poison_count += 1
+            if evaluation:  # will poison only a fraction of samples with label = 3 and 6
+                if targets[index] == 3 or targets[index] == 6:
+                    if torch.rand(1) < backdoor_fraction:
+                        altered_samples.append(index)
+                        new_targets[index] = backdoor_label
+                        new_data[index] = self.add_backdoor_pixels(data[index])
+                    #                 poison_count += 1
+                    else:
+                        new_data[index] = data[index]
+                        new_targets[index] = targets[index]
+                else:
+                    new_data[index] = data[index]
+                    new_targets[index] = targets[index]
 
-            else:  # will poison only a fraction of data when training
-                if torch.rand(1) < backdoor_fraction:
+            else:  # will poison only samples with label = 3 and 6
+                if targets[index] == 3 or targets[index] == 6:
                     new_targets[index] = backdoor_label
                     new_data[index] = self.add_backdoor_pixels(data[index])
                 #                     poison_count += 1
@@ -107,19 +115,16 @@ class Backdoor_Utils():
                         #print(self.trigger_position)
                     #    p = self.trigger_position
                 
-                    new_data_indexes.append(index)
-                
                 else:
                     new_data[index] = data[index]
                     new_targets[index] = targets[index]
-
 
         new_targets = new_targets.long()
         if evaluation:
             new_data.requires_grad_(False)
             new_targets.requires_grad_(False)
-        else:
-            return new_data, new_targets, new_data_indexes
+            return new_data, new_targets, altered_samples
+    
         return new_data, new_targets
 
     def setRandomTrigger(self,k=6,seed=None):

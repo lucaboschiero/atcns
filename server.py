@@ -62,9 +62,24 @@ class Server():
         f1 = 0
         conf = np.zeros([10,10])
 
+        total_samples_label_0_1 = 1  # Number of samples per label for ASR calculation
+        relative_indexes = []
+        misclassified_altered = 0
+        altered_samples = []
+
         #Disables gradient calculations to save memory and speed up testing (no backpropagation needed) and iterates over the test dataset using the dataLoader
         with torch.no_grad():
             for data, target in self.dataLoader:
+                label_0_indexes = []
+                label_1_indexes = []
+                for i in range(len(target)):
+                    if target[i].item() == 0 and len(label_0_indexes) < total_samples_label_0_1:
+                        label_0_indexes.append(i)
+                    elif target[i].item() == 1 and len(label_1_indexes) < total_samples_label_0_1:
+                        label_1_indexes.append(i)
+                
+                relative_indexes = label_0_indexes + label_1_indexes
+
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)              #Feeds the input data through the global model to get predictions.
 
@@ -81,8 +96,20 @@ class Server():
                 f1 += f1_score(target.cpu(), pred.cpu(), average = 'weighted')*count          #calculate global f1 score   
                 c+=count
 
+                # Misclassified altered samples
+                for idx in relative_indexes:
+                    if pred[idx].item() != target[idx].item():
+                        misclassified_altered += 1
+                
+                altered_samples += relative_indexes
+
         test_loss /= count                             # Computes the average test loss.
         accuracy = 100. * correct / count              # Calculates the accuracy percentage.
+
+        print("Altered samples", len(altered_samples))
+        print("Missclassified Altered samples", misclassified_altered)
+
+        print("ASR: ", f"{misclassified_altered/len(altered_samples):.2f}")
 
         #print results
         logger.info(conf.astype(int))                        # Prints the confusion matrix with integer values.
@@ -90,7 +117,7 @@ class Server():
         self.model.cpu()                               # avoid occupying gpu when idle
         logger.info(
             '[Server] Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, count, accuracy))
-        return test_loss, accuracy
+        return test_loss, accuracy, f"{misclassified_altered/len(altered_samples):.4f}"
 
     def test_backdoor(self):
         logger.info("[Server] Start testing backdoor\n")
@@ -99,17 +126,34 @@ class Server():
         test_loss = 0
         correct = 0
         utils = Backdoor_Utils()
+        altered_samples = []
+        misclassified_altered = 0
         with torch.no_grad():
             for data, target in self.dataLoader:
                 
+                original_target = target.clone()
+
                 #corrupting dataset
-                data, target = utils.get_poison_batch(data, target, backdoor_fraction=1,
+                data, target, relative_indexes = utils.get_poison_batch(data, target, backdoor_fraction=0.1,
                                                       backdoor_label=utils.backdoor_label, evaluation=True)
-                data, target = data.to(self.device), target.to(self.device)
+                data, target, original_target = data.to(self.device), target.to(self.device), original_target.to(self.device)
                 output = self.model(data)
-                test_loss += self.criterion(output, target, reduction='sum').item()  # sum up batch loss
+                test_loss += self.criterion(output, original_target, reduction='sum').item()  # sum up batch loss
                 pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-                correct += pred.eq(target.view_as(pred)).sum().item()
+                correct += pred.eq(original_target.view_as(pred)).sum().item()
+
+                altered_samples = altered_samples + relative_indexes
+
+                # Misclassified altered samples
+                for idx in relative_indexes:
+                    if pred[idx].item() != original_target[idx].item():
+                        misclassified_altered += 1
+
+
+        #print("Altered samples", len(altered_samples))
+        #print("Missclassified Altered samples", misclassified_altered)
+
+        #print("ASR: ", f"{misclassified_altered/len(altered_samples):.2f}")
 
         test_loss /= len(self.dataLoader.dataset)
         accuracy = 100. * correct / len(self.dataLoader.dataset)
@@ -120,7 +164,7 @@ class Server():
                                                                                                     len(
                                                                                                         self.dataLoader.dataset),
                                                                                                     accuracy))
-        return test_loss, accuracy
+        return test_loss, accuracy, f"{misclassified_altered/len(altered_samples):.4f}"
 
     def test_semanticBackdoor(self):
         print("[Server] Start testing semantic backdoor")
@@ -157,16 +201,9 @@ class Server():
     #train the server model by getting all the clients info (ie weight update) and updating the global model, redistributing it until convergence
     def train(self, group, epoch):
         selectedClients = [self.clients[i] for i in group]       # get all clients
-        altered_samples = []
         for c in selectedClients:             
-            sample = c.train()                   # launch training for each client
+            c.train()                   # launch training for each client
             c.update()                  # update clients models
-            altered_samples += sample
-        
-        # Remove duplicates by converting to a set and back to a list
-        altered_samples = list(set(altered_samples))
-        #print("Altered sample: ", altered_samples)
-        #print("Len: ", len(altered_samples))
 
         if self.isSaveChanges:
             self.saveChanges(selectedClients)
@@ -267,6 +304,8 @@ class Server():
             self.AR = self.pca    
         elif ar == 'kmeans' :
             self.AR = self.k_means   
+        elif ar == 'mstold' :
+            self.AR = self.mstold  
         else:
             raise ValueError("Not a valid aggregation rule or aggregation rule not implemented")
 
@@ -339,6 +378,12 @@ class Server():
         out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
         return out,attackers
     
+    def mstold(self, clients) :
+        from rules.mstold import Net         #import net from rules/mst.py
+        self.Net = Net                    # non ho capito perchè questo (cioè perchè assegna net a self.Net?)
+        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out,attackers
+    
     def k_densest(self, clients) :
         from rules.density import Net
         self.Net = Net
@@ -380,10 +425,10 @@ class Server():
         vecs = [utils.net2vec(delta) for delta in deltas]
         vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]
 
-        # Print the L2 norm for each client's update vector
+        """# Print the L2 norm for each client's update vector
         for i, vec in enumerate(vecs):
             update_norm = torch.norm(vec, p=2).item()  # Compute L2 norm
-            logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm
+            logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm"""
 
         result, attackers = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
         result = result.view(-1)

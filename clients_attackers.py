@@ -27,14 +27,8 @@ class Attacker_LabelFlipping01swap(Client):
 
     def data_transform(self, data, target):
         target_ = torch.tensor(list(map(lambda x: 1 - x if x in [0, 1] else x, target)))
-
-        # Find the indexes of labels 0 and 1
-        idx_label = torch.where((target == 0) | (target == 1))[0]
-
-        # Print or log the indexes if needed
-        #print(f"Indexes of label 0/1: {idx_label.tolist()}")
-
-        return data, target_, idx_label
+        assert target.shape == target_.shape, "Inconsistent target shape"
+        return data, target_
         
 
 class Attacker_LabelFlipping59to71(Client):
@@ -54,10 +48,10 @@ class Attacker_Backdoor(Client):
         self.utils = Backdoor_Utils()
 
     def data_transform(self, data, target):
-        data, target, idx = self.utils.get_poison_batch(data, target, backdoor_fraction=0.5,
+        data, target = self.utils.get_poison_batch(data, target, backdoor_fraction=1,
                                                    backdoor_label=self.utils.backdoor_label)
 
-        return data, target, idx
+        return data, target
 
 
 class Attacker_SemanticBackdoor(Client):

@@ -33,29 +33,21 @@ class Client():
         self.model.zero_grad()
 
     def data_transform(self, data, target):
-        return data, target, -1
+        return data, target
 
     def train(self):
         self.model.to(self.device)
         self.model.train()             #setta pytorch in modalità train
 
-        modified_samples = []
-
         for epoch in range(self.inner_epochs):
             for batch_idx, (data, target) in enumerate(self.dataLoader):
-                data, target, relative_idx = self.data_transform(data, target)
+                data, target = self.data_transform(data, target)
                 data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
                 output = self.model(data)
                 loss = self.criterion(output, target)
                 loss.backward()
                 self.optimizer.step()
-
-                if isinstance(relative_idx, int):
-                    continue
-                else:
-                    #print(relative_idx)
-                    modified_samples += ([(int(i) + 128 * int(batch_idx)) for i in relative_idx])
 
                 #print("BATCH idx", batch_idx)
                 #print("LEN: ", len(data))
@@ -64,7 +56,6 @@ class Client():
 
         self.isTrained = True
         self.model.cpu()  ## avoid occupying gpu when idle
-        return modified_samples
 
     def test(self, testDataLoader):            
         self.model.to(self.device)
