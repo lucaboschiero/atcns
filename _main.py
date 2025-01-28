@@ -165,8 +165,8 @@ def main(args):
     writer.add_scalar('test/loss', loss, steps)
     writer.add_scalar('test/accuracy', accuracy, steps)
 
-    asr_backdoor_list = []
-    asr_labelflipping_list = []
+    asr_backdoor = 0
+    asr_labelflipping = 0
 
     if 'BACKDOOR' in args.attacks.upper():
         if 'SEMANTIC' in args.attacks.upper():
@@ -219,8 +219,7 @@ def main(args):
 
         loss, Testaccuracy, labelflipping_asr = server.test()               # launch again testing
 
-        if j > 3 and ED_epoch == '*':
-            asr_labelflipping_list.append(labelflipping_asr)
+        asr_labelflipping = labelflipping_asr
 
 
         writer.add_scalar('test/loss', loss, steps)
@@ -234,8 +233,9 @@ def main(args):
                 loss, accuracy, bdata, bpred = server.test_semanticBackdoor()       # launch again testing for semantic backdoor attacks
             else:
                 loss, accuracy, backdoor_asr = server.test_backdoor()               # launch again testing for backdoor attacks
-                if j > 3 and ED_epoch == '*':                              
-                    asr_backdoor_list.append(backdoor_asr)
+                print("ASR backdoor: ", backdoor_asr)                           
+                
+                asr_backdoor = backdoor_asr
 
             writer.add_scalar('test/loss_backdoor', loss, steps)
             writer.add_scalar('test/backdoor_success_rate', accuracy, steps)
@@ -252,13 +252,13 @@ def main(args):
         s2 = "SF"
         if len(attacker_list_backdoor) > 0:
             total = (len(attacker_list_labelFlipping) / (len(attacker_list_labelFlipping) + len(attacker_list_backdoor)))
-            print("TOTAL : ", total)
+            #print("TOTAL : ", total)
     else:
         if len(attacker_list_multilabelFlipping) > 0:
             s2 = "MF"
         if len(attacker_list_backdoor) > 0:
             total = (len(attacker_list_multilabelFlipping) / (len(attacker_list_multilabelFlipping) + len(attacker_list_backdoor)))
-            print("TOTAL : ", total)
+            #print("TOTAL : ", total)
     
     total_str = f"{total:.2f}".replace('.', ',')
 
@@ -268,7 +268,7 @@ def main(args):
 
     # Table for accuracy
     # Initialize the filepath
-    filepath = f"./log/Mnist/Accuracy/{total_str}{s2}.csv"
+    filepath = f"./logs/Mnist/Accuracy/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mst", "density", "kmeans"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=Testaccuracy)
@@ -285,7 +285,7 @@ def main(args):
     filepath = f"./logs/Mnist/FP/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold" "mst", "kmeans"])
-    FPmean = sum(false_positives_vec) / len(false_positives_vec)
+    FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}"
     print("False positive mean: ", FPmean)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=FPmean)
 
@@ -294,9 +294,7 @@ def main(args):
     filepath = f"./logs/Mnist/ASR/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold" "mst", "kmeans"])
-    ASR_backdoor = sum(asr_backdoor_list) / len(asr_backdoor_list)
-    ASR_labelFlipping = sum(asr_labelflipping_list) / len(asr_labelflipping_list)
-    ASR_total = f"{((ASR_backdoor + ASR_labelFlipping) / 2 * 100):.2f}"
+    ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / 2):.3f}"
     print("ASR total: ", ASR_total)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ASR_total)
 

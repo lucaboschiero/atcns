@@ -65,7 +65,7 @@ def fun(input):                           # input contains the clients weight up
     min_d = +1*n
     p = []             # vector containing attackers
     k = [[],[]]        # vector containing valid nodes for each subgraph
-    temp_nodes = []
+    benign_clients = []
 
     for i, sg in enumerate(sub_graphs) :              # for each subgraph, calculates the median weights
         k = [int(j) for j in sg.nodes]                # vector of integers representing nodes in the subgraphs
@@ -86,9 +86,9 @@ def fun(input):                           # input contains the clients weight up
         logger.info(f"Iter {i}, k: {k}")
         if d < min_d :                  # if the median is higher then the former one, update it and save the nodes as attackers
             min_d = d
-            temp_nodes = k
+            benign_clients = k
 
-    p = [i for i in range(n) if i not in temp_nodes]
+    p = [i for i in range(n) if i not in benign_clients]
 
     input = input.squeeze(0)        
     out = torch.mean(input[:,[i for i in range(n) if i not in p]], dim=1, keepdim=True)        # calculates the aggregated weight update, considering only benign clients

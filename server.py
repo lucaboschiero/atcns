@@ -62,10 +62,13 @@ class Server():
         f1 = 0
         conf = np.zeros([10,10])
 
-        total_samples_label_0_1 = 1  # Number of samples per label for ASR calculation
+        total_samples_label_0_1 = 100  # Number of samples per label for ASR calculation
         relative_indexes = []
         misclassified_altered = 0
         altered_samples = []
+
+        samples_0 = 0
+        samples_1 = 0
 
         #Disables gradient calculations to save memory and speed up testing (no backpropagation needed) and iterates over the test dataset using the dataLoader
         with torch.no_grad():
@@ -73,10 +76,12 @@ class Server():
                 label_0_indexes = []
                 label_1_indexes = []
                 for i in range(len(target)):
-                    if target[i].item() == 0 and len(label_0_indexes) < total_samples_label_0_1:
+                    if target[i].item() == 0 and samples_0 < total_samples_label_0_1 / 2:
                         label_0_indexes.append(i)
-                    elif target[i].item() == 1 and len(label_1_indexes) < total_samples_label_0_1:
+                        samples_0 = samples_0 + 1
+                    elif target[i].item() == 1 and samples_1 < total_samples_label_0_1 / 2:
                         label_1_indexes.append(i)
+                        samples_1 = samples_1 + 1
                 
                 relative_indexes = label_0_indexes + label_1_indexes
 
@@ -106,10 +111,10 @@ class Server():
         test_loss /= count                             # Computes the average test loss.
         accuracy = 100. * correct / count              # Calculates the accuracy percentage.
 
-        print("Altered samples", len(altered_samples))
-        print("Missclassified Altered samples", misclassified_altered)
+        #print("Altered samples", len(altered_samples))
+        #print("Missclassified Altered samples", misclassified_altered)
 
-        print("ASR: ", f"{misclassified_altered/len(altered_samples):.2f}")
+        print("ASR LF: ", f"{misclassified_altered/len(altered_samples):.2f}")
 
         #print results
         logger.info(conf.astype(int))                        # Prints the confusion matrix with integer values.
@@ -406,10 +411,10 @@ class Server():
         vecs = [utils.net2vec(delta) for delta in deltas]              # transforms all deltas into vectors of dimension 1
         vecs = [vec for vec in vecs if torch.isfinite(vec).all().item()]      # filters values to keep only finite ones
 
-        # Print the L2 norm for each client's update vector
+        """# Print the L2 norm for each client's update vector
         for i, vec in enumerate(vecs):
             update_norm = torch.norm(vec, p=2).item()  # Compute L2 norm
-            logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm
+            logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm"""
 
         result = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n, apply the aggregation function
         result = result.view(-1)
