@@ -268,21 +268,21 @@ def main(args):
 
     # Table for accuracy
     # Initialize the filepath
-    filepath = f"./logs/Mnist/Accuracy/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/Accuracy/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=Testaccuracy)
 
     # Table for early detection
     # Initialize the filepath
-    filepath = f"./logs/Mnist/EarlyDetection/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/EarlyDetection/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ED_epoch)
 
     #Table for false positives
     # Initialize the filepath
-    filepath = f"./logs/Mnist/FP/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/FP/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold" "mst", "kmeans"])
     FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}"
@@ -291,7 +291,7 @@ def main(args):
 
     #Table for ASR
     # Initialize the filepath
-    filepath = f"./logs/Mnist/ASR/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/ASR/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / 2):.3f}"
