@@ -1,6 +1,9 @@
 import subprocess
 import time
 
+# Define launcher execution log path
+execution_log_path = "./logs/execution_log.txt"
+
 # Define script and argument sets
 script_path = "./main.py"
 
@@ -11,9 +14,10 @@ epochs = 30
 total_clients = 40
 attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
 labelflipping_percentage = [50, 30, 70]
+dataset = "mnist"
 
 # Open a file for logging
-with open("./execution_log.txt", "a") as log_file:
+with open(execution_log_path, "a") as log_file:
     # Log header
     log_file.write("Execution Log:\n")
     log_file.write("=========================================\n")
@@ -34,10 +38,11 @@ for percentage in attacker_percentage:
                 "--n_attacker_labelFlipping", str(num_labelflipping_attacker),
                 "--n_attacker_backdoor", str(num_backdoor_attacker),
                 "-n", str(total_clients),
-                "--epochs", str(epochs)
+                "--epochs", str(epochs),
+                "--dataset", dataset
             ]
             
-            with open("./execution_log.txt", "a") as log_file:
+            with open(execution_log_path, "a") as log_file:
                 # Log the arguments
                 log_file.write(f"Running with parameters:\n")
                 log_file.write(f"aggRule: {ar}, attacker_percentage: {percentage}, labelflipping_percentage: {lfpercentage}, num_labelflipping_attacker: {num_labelflipping_attacker}, num_backdoor_attacker: {num_backdoor_attacker}\n")
