@@ -293,7 +293,7 @@ def main(args):
     # Initialize the filepath
     filepath = f"./logs/Mnist/ASR/{total_str}{s2}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold" "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / 2):.3f}"
     print("ASR total: ", ASR_total)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ASR_total)
