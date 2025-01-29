@@ -9,7 +9,7 @@ script_path = "./main.py"
 
 aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
 device = "cpu"
-attacks = "backdoor/labelflipping"
+attacks = "backdoor/multilabelflipping"
 epochs = 30
 total_clients = 40
 attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
@@ -35,7 +35,7 @@ for percentage in attacker_percentage:
                 "--device", device,
                 "--attacks", attacks,
                 "--save_model_weights",
-                "--n_attacker_labelFlipping", str(num_labelflipping_attacker),
+                "--n_attacker_multilabelFlipping", str(num_labelflipping_attacker),
                 "--n_attacker_backdoor", str(num_backdoor_attacker),
                 "-n", str(total_clients),
                 "--epochs", str(epochs),

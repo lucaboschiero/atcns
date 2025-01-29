@@ -62,28 +62,31 @@ class Server():
         f1 = 0
         conf = np.zeros([10,10])
 
-        total_samples_label_0_1 = 100  # Number of samples per label for ASR calculation
+        total_samples_label_59_71 = 100  # Number of samples per label for ASR calculation
         relative_indexes = []
         misclassified_altered = 0
         altered_samples = []
 
-        samples_0 = 0
+        samples_5 = 0
+        samples_9 = 0
+
+        samples_7 = 0
         samples_1 = 0
 
         #Disables gradient calculations to save memory and speed up testing (no backpropagation needed) and iterates over the test dataset using the dataLoader
         with torch.no_grad():
             for data, target in self.dataLoader:
-                label_0_indexes = []
-                label_1_indexes = []
+                label_5_indexes = []
+                label_9_indexes = []
                 for i in range(len(target)):
-                    if target[i].item() == 0 and samples_0 < total_samples_label_0_1 / 2:
-                        label_0_indexes.append(i)
-                        samples_0 = samples_0 + 1
-                    elif target[i].item() == 1 and samples_1 < total_samples_label_0_1 / 2:
-                        label_1_indexes.append(i)
-                        samples_1 = samples_1 + 1
+                    if target[i].item() == 5 and samples_5 < total_samples_label_59_71 / 2:
+                        label_5_indexes.append(i)
+                        samples_5 = samples_5 + 1
+                    elif target[i].item() == 9 and samples_9 < total_samples_label_59_71 / 2:
+                        label_9_indexes.append(i)
+                        samples_9 = samples_9 + 1
                 
-                relative_indexes = label_0_indexes + label_1_indexes
+                relative_indexes = label_5_indexes + label_9_indexes
 
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)              #Feeds the input data through the global model to get predictions.
@@ -114,7 +117,7 @@ class Server():
         #print("Altered samples", len(altered_samples))
         #print("Missclassified Altered samples", misclassified_altered)
 
-        print("ASR LF: ", f"{misclassified_altered/len(altered_samples):.2f}")
+        print("ASR MLF: ", f"{misclassified_altered/len(altered_samples):.2f}")
 
         #print results
         logger.info(conf.astype(int))                        # Prints the confusion matrix with integer values.
