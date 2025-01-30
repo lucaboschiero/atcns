@@ -284,7 +284,7 @@ def main(args):
     # Initialize the filepath
     filepath = f"./logs/{args.dataset.capitalize()}/FP/{total_str}{s2}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold" "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}"
     print("False positive mean: ", FPmean)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=FPmean)
