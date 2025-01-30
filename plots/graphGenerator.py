@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import os
 
 # Percorso del file CSV (modifica questo percorso in base al tuo sistema)
-file_path = "./logs/Mnist/FP/0,25SF.csv"
-#file_path = "./logs/Mnist/EarlyDetection/0,50SF.csv"
+#file_path = "./logs/Mnist/FP/0,25SF.csv"
+file_path = "./logs/Mnist/EarlyDetection/0,75MF.csv"
 
 # Carica il file CSV
 data = pd.read_csv(file_path)
@@ -53,6 +53,10 @@ for idx, col in enumerate(values.columns):
     x_offset = (idx - (num_columns - 1) / 2) * (bar_width + 0.1)
     bar_values = values[col].astype(float)
 
+    # Replace zero values with a small number to make them visible (e.g., 0.1)
+    bar_values = bar_values.apply(lambda x: 0.5 if x == 0 else x)
+
+    # Disegnare le barre
     bars = plt.bar(x_positions + x_offset, bar_values, width=bar_width, label=col, color=colors(idx))
 
     # Aggiungi asterischi sopra le barre che originariamente erano '*'
@@ -60,9 +64,11 @@ for idx, col in enumerate(values.columns):
         if orig_val == "*":
             plt.text(x_positions.iloc[i] + x_offset, 31, "*", ha='center', va='bottom', fontsize=14, fontweight='bold')
 
-# Aggiungi le etichette
+# Aggiungere etichette
 plt.xlabel("% attackers")
 plt.ylabel(ylabel)
+
+# Aggiungi il titolo
 plt.title(title)
 
 # Aggiungi la legenda
@@ -70,7 +76,11 @@ plt.legend(loc="upper right")
 
 metric = "ED" if folder_name == "EarlyDetection" else "FP"
 plot_name = metric + "_" + file_name.removesuffix('.csv')
-# Save the plot
+
+if metric == "FP": 
+    plt.ylim(top=100)
+
+# Salva il grafico
 plt.savefig(f"./plots/{plot_name}.png", dpi=300, bbox_inches="tight")
 
 # Ottimizza la disposizione e mostra il grafico
