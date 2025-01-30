@@ -4,7 +4,7 @@ import os
 
 # Percorso del file CSV (modifica questo percorso in base al tuo sistema)
 #file_path = "./logs/Mnist/FP/0,25SF.csv"
-file_path = "./logs/Mnist/EarlyDetection/0,75MF.csv"
+file_path = "./logs/FMnist/EarlyDetection/0,75MF.csv"
 
 # Carica il file CSV
 data = pd.read_csv(file_path)
@@ -81,7 +81,7 @@ if metric == "FP":
     plt.ylim(top=100)
 
 # Salva il grafico
-plt.savefig(f"./plots/{plot_name}.png", dpi=300, bbox_inches="tight")
+plt.savefig(f"./plots/FMnist/{plot_name}.png", dpi=300, bbox_inches="tight")
 
 # Ottimizza la disposizione e mostra il grafico
 plt.tight_layout()

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Percorso del file CSV (modifica questo percorso in base al tuo sistema)
-file_path = "./logs/Mnist/Accuracy/0,25MF.csv"
+file_path = "./logs/FMnist/Accuracy/0,50MF.csv"
 
 # Carica il file CSV
 data = pd.read_csv(file_path)
@@ -61,7 +61,7 @@ plt.legend( loc="best")
 
 plot_name = "Acc" + "_" + file_name.removesuffix('.csv')
 # Save the plot
-plt.savefig(f"./plots/{plot_name}.png", dpi=300, bbox_inches="tight")
+plt.savefig(f"./plots/FMnist/{plot_name}.png", dpi=300, bbox_inches="tight")
 
 # Mostra il grafico
 plt.show()

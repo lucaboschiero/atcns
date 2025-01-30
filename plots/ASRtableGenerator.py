@@ -5,8 +5,9 @@ import glob
 import matplotlib.pyplot as plt
 
 # Percorso del file CSV (modifica questo percorso in base al tuo sistema)
-folder_path = "./plots/Mnist/ASR/"
+folder_path = "./logs/FMnist/ASR/"
 file = "0,50" # Cambialo in base ai file (0,25SF, 0,50SF, 0,75SF)
+dataset = "FMnist"
 
 # 🔍 Trova tutti i file CSV nella cartella
 csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
@@ -21,7 +22,7 @@ for file_path in csv_files:
         file_name = os.path.basename(file_path)
 
         # 📂 Estrai il nome del dataset (puoi modificarlo per altri dataset)
-        dataset_name = "MNIST"  
+        dataset_name = dataset.upper()  
 
         # 📊 Determina se è MF o SF
         flipping_type = "MF" if "MF" in file_name else "SF"
@@ -52,7 +53,7 @@ df_combined = pd.DataFrame.from_dict(combined_data, orient="index").reset_index(
 df_combined.columns = ["Dataset", "% Attacker"] + list(df_combined.columns[2:])  # Rinomina le colonne
 
 # 📄 Salva la tabella in un file di testo
-output_txt = f"./logs/{dataset_name}_{file}_ARStable.txt"
+output_txt = f"./plots/{dataset}/{dataset_name}_{file}_ARStable.txt"
 with open(output_txt, "w") as f:
     f.write(tabulate(df_combined, headers="keys", tablefmt="pretty", showindex=False))
 
@@ -73,7 +74,7 @@ table.set_fontsize(10)
 table.auto_set_column_width([i for i in range(len(df_combined.columns))])  # Imposta larghezza colonna
 
 # 📄 Salva l'immagine della tabella
-output_img = f"./logs/{dataset_name}_{file}_ARStable.png"
+output_img = f"./plots/{dataset}/{dataset_name}_{file}_ARStable.png"
 plt.savefig(output_img, bbox_inches="tight", dpi=300)
 plt.close()
 
