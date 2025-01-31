@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Percorso del file CSV (modifica questo percorso in base al tuo sistema)
-file_path = "./logs/FMnist/Accuracy/0,50MF.csv"
+file_path = "./logs/FMnist/Accuracy/0,75MF.csv"
 
 # Carica il file CSV
 data = pd.read_csv(file_path)
@@ -50,7 +50,7 @@ for idx, col in enumerate(values.columns):
 # Aggiungi le etichette
 plt.xlabel("% attackers")
 plt.ylabel(ylabel + "( %)")
-plt.ylim(bottom=0)
+plt.ylim(bottom=40)
 plt.title(title)
 
 # Aggiungi la griglia per una migliore leggibilità
