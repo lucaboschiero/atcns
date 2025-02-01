@@ -4,7 +4,8 @@ import os
 
 # Percorso del file CSV (modifica questo percorso in base al tuo sistema)
 #file_path = "./logs/Mnist/FP/0,25SF.csv"
-file_path = "./logs/FMnist/EarlyDetection/0,75MF.csv"
+file_path = "./logs/Mnist/EarlyDetection/0,25MF.csv"
+dataset = "Mnist"
 
 # Carica il file CSV
 data = pd.read_csv(file_path)
@@ -26,7 +27,7 @@ title = "Early Detection" if folder_name == "EarlyDetection" else "False Positiv
 
 # Estrai informazioni dal nome del file
 file_name = os.path.basename(file_path)
-flipping_type = "MultiFlipping" if "MF" in file_name else "SingleFlipping"
+flipping_type = "MF-B" if "MF" in file_name else "SF-B"
 value_in_file = file_name.split(",")[1]
 
 # Rimuovi il suffisso dal nome del file
@@ -35,7 +36,7 @@ for suffix in ["MF.csv", "SF.csv"]:
         value_in_file = value_in_file.removesuffix(suffix)
         break
 
-title += f" {float(value_in_file)}% {flipping_type}"
+title += f" ({(value_in_file)}){flipping_type}"
 
 # Crea il grafico
 plt.figure(figsize=(12, 6))
@@ -65,11 +66,11 @@ for idx, col in enumerate(values.columns):
             plt.text(x_positions.iloc[i] + x_offset, 31, "*", ha='center', va='bottom', fontsize=14, fontweight='bold')
 
 # Aggiungere etichette
-plt.xlabel("% attackers")
-plt.ylabel(ylabel)
+plt.xlabel("% Attackers", fontsize=16)
+plt.ylabel(ylabel, fontsize=16)
 
 # Aggiungi il titolo
-plt.title(title)
+plt.title(title, fontsize=20)
 
 # Aggiungi la legenda
 plt.legend(loc="upper right")
@@ -81,7 +82,7 @@ if metric == "FP":
     plt.ylim(top=100)
 
 # Salva il grafico
-plt.savefig(f"./plots/FMnist/{plot_name}.png", dpi=300, bbox_inches="tight")
+plt.savefig(f"./plots/{dataset}/{plot_name}.png", dpi=300, bbox_inches="tight")
 
 # Ottimizza la disposizione e mostra il grafico
 plt.tight_layout()

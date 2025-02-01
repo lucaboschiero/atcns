@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import os
 
 # Percorso del file CSV (modifica questo percorso in base al tuo sistema)
-file_path = "./logs/FMnist/Accuracy/0,75MF.csv"
+file_path = "./logs/FMnist/Accuracy/0,25MF.csv"
+dataset = "FMnist"
 
 # Carica il file CSV
 data = pd.read_csv(file_path)
@@ -23,7 +24,7 @@ else:
 
 # Estrai informazioni dal nome del file
 file_name = os.path.basename(file_path)
-flipping_type = "MultiFlipping" if "MF" in file_name else "SingleFlipping"
+flipping_type = "MF-B" if "MF" in file_name else "SF-B"
 value_in_file = file_name.split(",")[1]  # Ottieni il valore prima della virgola (ad esempio 0,25)
 
 # Rimuovi il suffisso dal nome del file
@@ -32,7 +33,7 @@ for suffix in ["MF.csv", "SF.csv"]:
         value_in_file = value_in_file.removesuffix(suffix)
         break
 
-title += f" {float(value_in_file)}% {flipping_type}"
+title += f" ({(value_in_file)}){flipping_type}"
 
 # Crea il grafico a linee
 plt.figure(figsize=(10, 6))
@@ -48,10 +49,10 @@ for idx, col in enumerate(values.columns):
              label=col, linewidth=2, markersize=6)  # Linea più spessa e con punti visibili
 
 # Aggiungi le etichette
-plt.xlabel("% attackers")
-plt.ylabel(ylabel + "( %)")
+plt.xlabel("% Attackers", fontsize=16)
+plt.ylabel(ylabel + " (%)", fontsize=16)
 plt.ylim(bottom=40)
-plt.title(title)
+plt.title(title, fontsize=20)
 
 # Aggiungi la griglia per una migliore leggibilità
 plt.grid(True, linestyle='--', alpha=0.6)
@@ -61,7 +62,7 @@ plt.legend( loc="best")
 
 plot_name = "Acc" + "_" + file_name.removesuffix('.csv')
 # Save the plot
-plt.savefig(f"./plots/FMnist/{plot_name}.png", dpi=300, bbox_inches="tight")
+plt.savefig(f"./plots/{dataset}/{plot_name}.png", dpi=300, bbox_inches="tight")
 
 # Mostra il grafico
 plt.show()
