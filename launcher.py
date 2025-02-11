@@ -14,7 +14,7 @@ epochs = 30
 total_clients = 40
 attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
 labelflipping_percentage = [25, 50, 75]
-dataset = "mnist"
+dataset = "cifar"
 
 # Open a file for logging
 with open(execution_log_path, "a") as log_file:
