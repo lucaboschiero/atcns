@@ -4,3 +4,4 @@ __pycache__/*
 **/AggData/*
 *.pyc
 .vscode/
+plots/*/

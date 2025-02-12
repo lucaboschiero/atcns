@@ -9,12 +9,14 @@ script_path = "./main.py"
 
 aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
 device = "cpu"
-attacks = "backdoor/labelflipping"
+label_flipping_type = 'SF' # MF -> multilabelflipping  SF -> singlelabelflipping
 epochs = 30
 total_clients = 40
 attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
 labelflipping_percentage = [25, 50, 75]
-dataset = "mnist"
+dataset = "cifar"
+
+attacks = "backdoor/labelflipping" if label_flipping_type.upper() != "MF" else "backdoor/multilabelflipping"
 
 # Open a file for logging
 with open(execution_log_path, "a") as log_file:
@@ -30,12 +32,12 @@ for percentage in attacker_percentage:
         for ar in aggRule:
             # Construct arguments
             args = [
-                "python3", script_path,
+                "python", script_path,
                 "--AR", str(ar),
                 "--device", device,
                 "--attacks", attacks,
                 "--save_model_weights",
-                "--n_attacker_labelFlipping", str(num_labelflipping_attacker),
+                "--n_attacker_labelFlipping" if label_flipping_type.upper() != "MF" else "--n_attacker_multilabelFlipping", str(num_labelflipping_attacker),
                 "--n_attacker_backdoor", str(num_backdoor_attacker),
                 "-n", str(total_clients),
                 "--epochs", str(epochs),

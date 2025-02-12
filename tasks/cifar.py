@@ -10,13 +10,42 @@ from torchvision.models.resnet import resnet18
 
 from dataloader import *
 
+# Definition of the neural network model
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        # 3 input image channels (RGB), 6 output channels, 3x3 square convolution kernel
+        self.conv1 = nn.Conv2d(3, 6, 3)  # Changed from 1 to 3 channels
+        self.conv2 = nn.Conv2d(6, 16, 3)
+        # an affine operation: y = Wx + b
+        self.fc1 = nn.Linear(16 * 6 * 6, 120)  # 6*6 from image dimension after pooling
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
 
-def Net():
+    def forward(self, x):
+        # Max pooling over a (2, 2) window
+        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))  # After conv1, input becomes (3, 32, 32) -> (6, 30, 30)
+        # Second convolution layer, followed by max pooling
+        x = F.max_pool2d(F.relu(self.conv2(x)), 2)  # After conv2, input becomes (6, 30, 30) -> (16, 28, 28) -> (16, 14, 14)
+        x = x.view(-1, self.num_flat_features(x))  # Flatten the output for the fully connected layers
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+    def num_flat_features(self, x):
+        size = x.size()[1:]  # all dimensions except the batch dimension
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
+
+    """def Net():
     num_classes = 10
     model = resnet18(pretrained=True)
     n = model.fc.in_features
     model.fc = nn.Linear(n, num_classes)
-    return model
+    return model"""
     """def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(3,   64,  3)
@@ -48,7 +77,7 @@ def getDataset():
     dataset = datasets.CIFAR10('./data',
                                train=True,
                                download=True,
-                               transform_train = transforms.Compose([
+                               transform = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),

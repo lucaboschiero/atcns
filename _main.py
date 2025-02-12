@@ -97,9 +97,12 @@ def main(args):
         The following code marks specific clients as malicious by setting their label to 0.
         honest clients are labeled as 1, malicious clients are labeled as 0
         '''
+
+        label_flipping_type = 'NA'      # initialized as Not Assigned
         label = torch.ones(args.num_clients)
         for i in args.attacker_list_labelFlipping:
             label[i] = 0
+            label_flipping_type = 'SF'
         for i in args.attacker_list_labelFlippingDirectional:
             label[i] = 0
         for i in args.attacker_list_omniscient:
@@ -110,6 +113,7 @@ def main(args):
             label[i] = 0
         for i in args.attacker_list_multilabelFlipping:
             label[i] = 0
+            label_flipping_type = 'MF'
 
         torch.save(label, f'{server.savePath}/label.pt')        #Saves the label tensor (which marks honest and malicious clients) to the file
 
@@ -160,7 +164,7 @@ def main(args):
             
         server.attach(client_i)         #add clients objects to the server
 
-    loss, accuracy, labelflipping_asr = server.test()           #test to get accuracy result before training
+    loss, accuracy, labelflipping_asr = server.test(label_flipping_type)           #test to get accuracy result before training
     steps = 0
     writer.add_scalar('test/loss', loss, steps)
     writer.add_scalar('test/accuracy', accuracy, steps)
@@ -217,7 +221,7 @@ def main(args):
             if ED_epoch == '*':
                 ED_epoch = j
 
-        loss, Testaccuracy, labelflipping_asr = server.test()               # launch again testing
+        loss, Testaccuracy, labelflipping_asr = server.test(label_flipping_type)               # launch again testing
 
         asr_labelflipping = labelflipping_asr
 
