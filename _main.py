@@ -113,7 +113,10 @@ def main(args):
             label[i] = 0
         for i in args.attacker_list_multilabelFlipping:
             label[i] = 0
-            label_flipping_type = 'MF'
+            if label_flipping_type == 'SF':
+                label_flipping_type = 'SMF'
+            elif label_flipping_type == 'NA':
+                label_flipping_type = 'MF'
 
         torch.save(label, f'{server.savePath}/label.pt')        #Saves the label tensor (which marks honest and malicious clients) to the file
 
@@ -187,6 +190,7 @@ def main(args):
     attackers = 0
     b = True  # To disable the defence mechanisms when all attacker identified correctly
     detection_time_vec = []
+    number_of_attacker_type = 0
 
     remaining_clients = [] # Benign clients correct identified with detection mechanism
 
@@ -266,8 +270,9 @@ def main(args):
 
 
     if len(attacker_list_multilabelFlipping) > 0 and len(attacker_list_labelFlipping) > 0 and len(attacker_list_backdoor) > 0:
-        s2 = "-3attackers"
-        total_str = "0,33"
+        s2 = "3attackers"
+        total_str = ""
+        number_of_attacker_type = 3
     else:
         if len(attacker_list_labelFlipping) > 0:
             s2 = "SF"
@@ -275,6 +280,7 @@ def main(args):
                 total = (len(attacker_list_labelFlipping) / (len(attacker_list_labelFlipping) + len(attacker_list_backdoor)))
                 #print("TOTAL : ", total)
                 total_str = f"{total:.2f}".replace('.', ',')
+                number_of_attacker_type = 2
         else:
             if len(attacker_list_multilabelFlipping) > 0:
                 s2 = "MF"
@@ -282,6 +288,7 @@ def main(args):
                 total = (len(attacker_list_multilabelFlipping) / (len(attacker_list_multilabelFlipping) + len(attacker_list_backdoor)))
                 #print("TOTAL : ", total)
                 total_str = f"{total:.2f}".replace('.', ',')
+                number_of_attacker_type = 2
 
     # Compute the percentage of attacker
     n_attackers = sum(1 for i in label if i == 0)
@@ -315,7 +322,7 @@ def main(args):
     filepath = f"./logs/{args.dataset.capitalize()}/ASR/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
-    ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / 2):.3f}"
+    ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / number_of_attacker_type):.3f}"
     print("ASR total: ", ASR_total)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ASR_total)
 

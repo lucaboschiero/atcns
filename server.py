@@ -199,6 +199,112 @@ class Server():
             logger.info(
                 '[Server] Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, count, accuracy))
             return test_loss, accuracy, f"{misclassified_altered/len(altered_samples):.4f}"
+        
+        elif (label_flipping_type.upper() == 'SMF'):
+            logger.info("server.test for SMF")
+            #variable initialization
+            test_loss = 0
+            correct = 0
+            count = 0
+            c = 0
+            f1 = 0
+            conf = np.zeros([10,10])
+
+            total_samples_label_0_1 = 100  # Number of samples per label for ASR calculation
+            relative_indexes_SF = []
+            misclassified_altered_SF = 0
+            altered_samples_SF = []
+
+            samples_0 = 0
+            samples_1 = 0
+
+            total_samples_label_59_71 = 100  # Number of samples per label for ASR calculation
+            relative_indexes_MF = []
+            misclassified_altered_MF = 0
+            altered_samples_MF = []
+
+            samples_5 = 0
+            samples_9 = 0
+
+            samples_7 = 0
+            samples_1 = 0
+
+            #Disables gradient calculations to save memory and speed up testing (no backpropagation needed) and iterates over the test dataset using the dataLoader
+            with torch.no_grad():
+                for data, target in self.dataLoader:
+
+                    # Signle Flipping
+                    label_0_indexes = []
+                    label_1_indexes = []
+                    for i in range(len(target)):
+                        if target[i].item() == 0 and samples_0 < total_samples_label_0_1 / 2:
+                            label_0_indexes.append(i)
+                            samples_0 = samples_0 + 1
+                        elif target[i].item() == 1 and samples_1 < total_samples_label_0_1 / 2:
+                            label_1_indexes.append(i)
+                            samples_1 = samples_1 + 1
+                    
+                    relative_indexes_SF = label_0_indexes + label_1_indexes
+
+                    label_5_indexes = []
+                    label_9_indexes = []
+                    for i in range(len(target)):
+                        if target[i].item() == 5 and samples_5 < total_samples_label_59_71 / 2:
+                            label_5_indexes.append(i)
+                            samples_5 = samples_5 + 1
+                        elif target[i].item() == 9 and samples_9 < total_samples_label_59_71 / 2:
+                            label_9_indexes.append(i)
+                            samples_9 = samples_9 + 1
+                    
+                    relative_indexes_MF = label_5_indexes + label_9_indexes
+
+                    data, target = data.to(self.device), target.to(self.device)
+                    output = self.model(data)              #Feeds the input data through the global model to get predictions.
+
+                    test_loss += self.criterion(output, target, reduction='sum').item()  # sum up batch loss between output and target
+                    
+                    if output.dim() == 1:
+                        pred = torch.round(torch.sigmoid(output))    #If the output is one-dimensional, apply the sigmoid function and round the result to get a binary prediction (0 or 1).
+                    else:
+                        pred = output.argmax(dim=1, keepdim=True)  # If the output is a logits tensor with multiple dimensions, use argmax to select the class with the highest probability.
+
+                    correct += pred.eq(target.view_as(pred)).sum().item()    #number of correct predictions
+                    count += pred.shape[0]                                   #number of predictions
+                    conf += confusion_matrix(target.cpu(),pred.cpu(), labels = [i for i in range(10)])    #calculate global confusion matrix
+                    f1 += f1_score(target.cpu(), pred.cpu(), average = 'weighted')*count          #calculate global f1 score   
+                    c+=count
+
+                    # Misclassified altered samples single flipping
+                    for idx in relative_indexes_SF:
+                        if pred[idx].item() != target[idx].item():
+                            misclassified_altered_SF += 1
+
+                    altered_samples_SF += relative_indexes_SF
+
+                    # Misclassified altered samples multi flipping
+                    for idx in relative_indexes_MF:
+                        if pred[idx].item() != target[idx].item():
+                            misclassified_altered_MF += 1
+                    
+                    altered_samples_MF += relative_indexes_MF
+
+            test_loss /= count                             # Computes the average test loss.
+            accuracy = 100. * correct / count              # Calculates the accuracy percentage.
+
+            #print("Altered samples", len(altered_samples))
+            #print("Missclassified Altered samples", misclassified_altered)
+
+            print("ASR SLF: ", f"{misclassified_altered_SF/len(altered_samples_SF):.2f}")
+            print("ASR MLF: ", f"{misclassified_altered_MF/len(altered_samples_MF):.2f}")
+
+            #print results
+            logger.info(conf.astype(int))                        # Prints the confusion matrix with integer values.
+            logger.info(f1/c)                                    # Prints the final weighted F1-score.
+            self.model.cpu()                                     # avoid occupying gpu when idle
+            logger.info(
+                '[Server] Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, count, accuracy))
+            return test_loss, accuracy, f"{misclassified_altered_SF/len(altered_samples_SF) + misclassified_altered_MF/len(altered_samples_MF):.4f}"
+
         else:
             logger.error("Chose label_flipping_type between SF or MF, or define new types and update the code to handle it.")
             return -99,-99,"-99"
