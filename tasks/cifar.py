@@ -12,22 +12,31 @@ from dataloader import *
 
 # Definition of the neural network model
 class Net(nn.Module):
+    '''
+    LeNet
+
+    retrieved from the pytorch tutorial
+    https://pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html
+
+    '''
+
     def __init__(self):
         super(Net, self).__init__()
-        # 3 input image channels (RGB), 6 output channels, 3x3 square convolution kernel
-        self.conv1 = nn.Conv2d(3, 6, 3)  # Changed from 1 to 3 channels
-        self.conv2 = nn.Conv2d(6, 16, 3)
+        # 1 input image channel, 6 output channels, 3x3 square convolution
+        # kernel
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.conv2 = nn.Conv2d(32, 64, 3)
         # an affine operation: y = Wx + b
-        self.fc1 = nn.Linear(16 * 6 * 6, 120)  # 6*6 from image dimension after pooling
+        self.fc1 = nn.Linear(64 * 6 * 6, 120)  # 6*6 from image dimension
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
         # Max pooling over a (2, 2) window
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))  # After conv1, input becomes (3, 32, 32) -> (6, 30, 30)
-        # Second convolution layer, followed by max pooling
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)  # After conv2, input becomes (6, 30, 30) -> (16, 28, 28) -> (16, 14, 14)
-        x = x.view(-1, self.num_flat_features(x))  # Flatten the output for the fully connected layers
+        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+        # If the size is a square you can only specify a single number
+        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+        x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)

@@ -7,7 +7,8 @@ execution_log_path = "./logs/execution_log.txt"
 # Define script and argument sets
 script_path = "./main.py"
 
-aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
+aggRule = ["mst", "kmeans", "mstold", "foolsgold", "density"]
+#aggRule = ["kmeans"]
 device = "cpu"
 attacks = "backdoor/labelflipping"
 epochs = 30
@@ -39,7 +40,8 @@ for percentage in attacker_percentage:
                 "--n_attacker_backdoor", str(num_backdoor_attacker),
                 "-n", str(total_clients),
                 "--epochs", str(epochs),
-                "--dataset", dataset
+                "--dataset", dataset,
+                "--inner_epochs", "5"
             ]
             
             with open(execution_log_path, "a") as log_file:
