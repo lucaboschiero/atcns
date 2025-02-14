@@ -2,7 +2,7 @@ import logging
 import os
 
 # Funzione per creare il logger
-def get_logger(name='atcns_logger', log_file='test.log', level=logging.DEBUG):
+def get_logger(name='atcns_logger', log_file='Mnist_3attackers.log', level=logging.DEBUG):
     """
     Crea un logger che scrive sia su console che su file.
 
