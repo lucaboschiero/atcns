@@ -59,15 +59,15 @@ for percentage in attacker_percentage:
             result = subprocess.run(args)
 
             try:
-                with open("detection_time.txt", "r") as f:
+                with open("./logs/detection_time.txt", "r") as f:
                     detection_time = f.read().strip()
                 print(f"Execution Time: {detection_time} seconds")
 
                 # Delete the file after reading
-                os.remove("detection_time.txt")
+                os.remove("./logs/detection_time.txt")
                 print("File deleted successfully.")
             except FileNotFoundError:
-                print(f"Error: file detection_time.txt not found!")
+                print(f"Error: file ./logs/detection_time.txt not found!")
             
             with open(execution_log_path, "a") as log_file:
                 # Log the arguments
