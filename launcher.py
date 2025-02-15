@@ -3,9 +3,7 @@ import time
 import os
 
 # Define launcher execution log path
-execution_log_path = "./logs/execution_log_Mnist_3attackers.txt"
-
-detection_time_log_path = "./logs/detection_time.txt"
+execution_log_path = "./logs/execution_log_FMnist_3attackers.txt"
 
 # Define script and argument sets
 script_path = "./main.py"
@@ -15,10 +13,10 @@ device = "cpu"
 attacks = "backdoor/labelflipping/multilabelflipping"
 epochs = 30
 total_clients = 40
-#attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
-attacker_percentage = [50, 60, 70]
+attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
+#attacker_percentage = [50, 60, 70]
 labelflipping_percentage = [33]
-dataset = "mnist"
+dataset = "fmnist"
 
 # Open a file for logging
 with open(execution_log_path, "a") as log_file:
@@ -61,15 +59,15 @@ for percentage in attacker_percentage:
             result = subprocess.run(args)
 
             try:
-                with open(detection_time_log_path, "r") as f:
+                with open("detection_time.txt", "r") as f:
                     detection_time = f.read().strip()
                 print(f"Execution Time: {detection_time} seconds")
 
                 # Delete the file after reading
-                os.remove(detection_time_log_path)
+                os.remove("detection_time.txt")
                 print("File deleted successfully.")
             except FileNotFoundError:
-                print(f"Error: {detection_time_log_path} not found!")
+                print(f"Error: file detection_time.txt not found!")
             
             with open(execution_log_path, "a") as log_file:
                 # Log the arguments

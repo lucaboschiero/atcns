@@ -258,12 +258,6 @@ def main(args):
     writer.close()
 
 
-    #Compute the average detection time
-    avg_det_time = f"{(sum(detection_time_vec) / len(detection_time_vec)) :.2f}"
-    print("Average detection time: ", avg_det_time)
-    with open("./logs/detection_time.txt", "w") as f:
-        f.write(avg_det_time)
-
     # Compute percentage of Label Flipping attacker
     total = 0
     s2 = ""
@@ -289,6 +283,12 @@ def main(args):
                 #print("TOTAL : ", total)
                 total_str = f"{total:.2f}".replace('.', ',')
                 number_of_attacker_type = 2
+
+    #Compute the average detection time
+    avg_det_time = f"{(sum(detection_time_vec) / len(detection_time_vec)) :.2f}"
+    print("Average detection time: ", avg_det_time)
+    with open(f"./logs/detection_time.txt", "w") as f:
+        f.write(avg_det_time)
 
     # Compute the percentage of attacker
     n_attackers = sum(1 for i in label if i == 0)
