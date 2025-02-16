@@ -186,6 +186,7 @@ def main(args):
     false_positives_vec = []
     attackers = 0
     b = True  # To disable the defence mechanisms when all attacker identified correctly
+    detection_time_vec = []
 
     remaining_clients = [] # Benign clients correct identified with detection mechanism
 
@@ -207,12 +208,15 @@ def main(args):
                 remaining_clients = [i for i in group if i not in attackers]
             group = remaining_clients
 
-        attackers = server.train(group, j)                #train the clients
+        attackers, detection_time = server.train(group, j)                #train the clients
         #         server.train_concurrent(group)
         print("ATTACKERS: ", attackers)
         print("LIST ATTACKERS: ", list_attackers)
         print("ED: ", ED_epoch)
         if not isinstance(attackers, int):
+            print("Detection time: ", detection_time)
+            detection_time_vec.append(detection_time)
+
             if len(attackers) > 0:
                 false_positive = (len([i for i in attackers if label[i]==1])/ len(attackers)) *100
                 false_positives_vec.append(false_positive)
@@ -265,6 +269,12 @@ def main(args):
             #print("TOTAL : ", total)
     
     total_str = f"{total:.2f}".replace('.', ',')
+
+     #Compute the average detection time
+    avg_det_time = f"{(sum(detection_time_vec) / len(detection_time_vec)) :.2f}"
+    print("Average detection time: ", avg_det_time)
+    with open(f"./logs/detection_time.txt", "w") as f:
+        f.write(avg_det_time)
 
     # Compute the percentage of attacker
     n_attackers = sum(1 for i in label if i == 0)

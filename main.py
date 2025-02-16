@@ -1,6 +1,7 @@
 from utils.allocateGPU import *
 try:
     allocate_gpu()
+    print("Running With GPU")
 except :
     print("Running Without GPU")
 import parser

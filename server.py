@@ -285,6 +285,7 @@ class Server():
     #train the server model by getting all the clients info (ie weight update) and updating the global model, redistributing it until convergence
     def train(self, group, epoch):
         selectedClients = [self.clients[i] for i in group]       # get all clients
+
         for c in selectedClients:             
             c.train()                   # launch training for each client
             c.update()                  # update clients models
@@ -292,7 +293,7 @@ class Server():
         if self.isSaveChanges:
             self.saveChanges(selectedClients)
         
-
+        det_time = 0
         attackers = 0
         if epoch < 3:
             Delta = self.FedAvg(selectedClients)
@@ -301,7 +302,7 @@ class Server():
             if (self.AR == self.FedAvg or self.AR == self.FedMedian or self.AR == self.geometricMedian or self.AR == self.krum or self.AR == self.mkrum):
                 Delta = self.AR(selectedClients)      # back to the server, get clients weight update, aggregated accorting to the aggregation rule
             else: 
-                Delta, attackers = self.AR(selectedClients)
+                Delta, attackers, det_time = self.AR(selectedClients)
 
             toc = time.perf_counter()
             #print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
@@ -310,7 +311,7 @@ class Server():
         for param in self.model.state_dict():
             self.model.state_dict()[param] += Delta[param]         # update model parameters
         self.iter += 1
-        return attackers
+        return attackers, det_time
 
     def saveChanges(self, clients):
 
@@ -422,14 +423,14 @@ class Server():
     def foolsGold(self, clients):
         from rules.foolsGold import Net
         self.Net = Net
-        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
-        return out,attackers
+        out,attackers, det_time = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out,attackers, det_time
         
     def contra(self, clients):
         from rules.contra import Net
         self.Net = Net
-        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
-        return out,attackers    
+        out,attackers, det_time = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out,attackers, det_time     
 
     def residualBase(self, clients):
         from rules.residualBase import Net
@@ -459,26 +460,26 @@ class Server():
     def mst(self, clients) :
         from rules.mst import Net         #import net from rules/mst.py
         self.Net = Net                    # non ho capito perchè questo (cioè perchè assegna net a self.Net?)
-        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
-        return out,attackers
+        out,attackers, det_time = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out,attackers, det_time
     
     def mstold(self, clients) :
         from rules.mstold import Net         #import net from rules/mst.py
         self.Net = Net                    # non ho capito perchè questo (cioè perchè assegna net a self.Net?)
-        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
-        return out,attackers
+        out,attackers, det_time = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out,attackers, det_time
     
     def k_densest(self, clients) :
         from rules.density import Net
         self.Net = Net
-        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
-        return out,attackers
+        out,attackers, det_time = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out,attackers, det_time
     
     def k_means(self,clients):
         from rules.kmeans import Net
         self.Net = Net
-        out,attackers = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
-        return out, attackers
+        out,attackers, det_time = self.FedFuncWholeNetAttackers(clients, lambda arr: Net().cpu()(arr.cpu()))
+        return out, attackers, det_time
 
     def FedFuncWholeNet(self, clients, func):
         '''
@@ -514,10 +515,14 @@ class Server():
             update_norm = torch.norm(vec, p=2).item()  # Compute L2 norm
             logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm"""
 
+        start_time = time.time()
         result, attackers = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
+        end_time = time.time()
+
+        detection_time = (end_time - start_time)
         result = result.view(-1)
         utils.vec2net(result, Delta)
-        return Delta, attackers
+        return Delta, attackers, detection_time
 
     def FedFuncWholeStateDict(self, clients, func):
         '''
