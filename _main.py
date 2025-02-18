@@ -17,6 +17,14 @@ logger = get_logger()
 
 # Function to initialize the log table if it doesn't exist
 def initialize_log_table(filepath, columns):
+    # Estrai la cartella dal percorso del file
+    directory = os.path.dirname(filepath)
+    
+    # Se la cartella non esiste, creala
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
+
     if not os.path.exists(filepath):
         # Create an empty DataFrame with specified columns
         log_table = pd.DataFrame(columns=columns)
@@ -282,21 +290,21 @@ def main(args):
 
     # Table for accuracy
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/Accuracy/{total_str}{s2}.csv"
+    filepath = f"./logs/Scalability/{args.num_clients}/{args.dataset.capitalize()}/Accuracy/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=Testaccuracy)
 
     # Table for early detection
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/EarlyDetection/{total_str}{s2}.csv"
+    filepath = f"./logs/Scalability/{args.num_clients}/{args.dataset.capitalize()}/EarlyDetection/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ED_epoch)
 
     #Table for false positives
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/FP/{total_str}{s2}.csv"
+    filepath = f"./logs/Scalability/{args.num_clients}/{args.dataset.capitalize()}/FP/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}"
@@ -305,7 +313,7 @@ def main(args):
 
     #Table for ASR
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/ASR/{total_str}{s2}.csv"
+    filepath = f"./logs/Scalability/{args.num_clients}/{args.dataset.capitalize()}/ASR/{total_str}{s2}.csv"
     # Initialize the log table
     initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
     ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / 2):.3f}"
