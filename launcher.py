@@ -3,21 +3,23 @@ import time
 import os
 
 # Define launcher execution log path
-execution_log_path = "./logs/execution_log-cifar-5innerepochs.txt"
+execution_log_path = "./logs/execution_log-cifar-resnet.txt"
 
 # Define script and argument sets
 script_path = "./main.py"
 
-aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
-device = "cuda"
-label_flipping_type = 'SF' # MF -> multilabelflipping  SF -> singlelabelflipping
+#aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
+aggRule = ["kmeans"]
+device = "cpu"
+label_flipping_type = 'MF' # MF -> multilabelflipping  SF -> singlelabelflipping
 epochs = 30
 total_clients = 40
 #attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
 attacker_percentage = [50]
-labelflipping_percentage = [25, 50, 75]
+#labelflipping_percentage = [25, 50, 75]
+labelflipping_percentage = [50]
 dataset = "cifar"
-client_training_epochs = 5      # choose 1 if you want to use default value 1
+client_training_epochs = 1      # choose 1 if you want to use default value 1
 
 attacks = "backdoor/labelflipping" if label_flipping_type.upper() != "MF" else "backdoor/multilabelflipping"
 

@@ -11,7 +11,7 @@ from torchvision.models.resnet import resnet18
 from dataloader import *
 
 # Definition of the neural network model
-class Net(nn.Module):
+"""class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         # 3 input image channels (RGB), 6 output channels, 3x3 square convolution kernel
@@ -38,14 +38,14 @@ class Net(nn.Module):
         num_features = 1
         for s in size:
             num_features *= s
-        return num_features
+        return num_features"""
 
-    """def Net():
+def Net():
     num_classes = 10
     model = resnet18(pretrained=True)
     n = model.fc.in_features
     model.fc = nn.Linear(n, num_classes)
-    return model"""
+    return model
     """def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(3,   64,  3)

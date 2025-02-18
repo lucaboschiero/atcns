@@ -257,13 +257,13 @@ def main(args):
     s2 = ""
 
     if len(attacker_list_labelFlipping) > 0:
-        s2 = "SF"
+        s2 = "SF-Resnet"
         if len(attacker_list_backdoor) > 0:
             total = (len(attacker_list_labelFlipping) / (len(attacker_list_labelFlipping) + len(attacker_list_backdoor)))
             #print("TOTAL : ", total)
     else:
         if len(attacker_list_multilabelFlipping) > 0:
-            s2 = "MF"
+            s2 = "MF-Resnet"
         if len(attacker_list_backdoor) > 0:
             total = (len(attacker_list_multilabelFlipping) / (len(attacker_list_multilabelFlipping) + len(attacker_list_backdoor)))
             #print("TOTAL : ", total)

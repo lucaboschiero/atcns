@@ -302,7 +302,9 @@ class Server():
             if (self.AR == self.FedAvg or self.AR == self.FedMedian or self.AR == self.geometricMedian or self.AR == self.krum or self.AR == self.mkrum):
                 Delta = self.AR(selectedClients)      # back to the server, get clients weight update, aggregated accorting to the aggregation rule
             else: 
+                
                 Delta, attackers, det_time = self.AR(selectedClients)
+                print("DOPO")
 
             toc = time.perf_counter()
             #print(f"[Server] The aggregation takes {toc - tic:0.6f} seconds.\n")
@@ -515,8 +517,10 @@ class Server():
             update_norm = torch.norm(vec, p=2).item()  # Compute L2 norm
             logger.info(f"Client {i} Update Norm: {update_norm}")  # Print the norm"""
 
+        print("Before")
         start_time = time.time()
         result, attackers = func(torch.stack(vecs, 1).unsqueeze(0))  # input as 1 by d by n
+        print("After")
         end_time = time.time()
 
         detection_time = (end_time - start_time)

@@ -8,6 +8,8 @@ from collections import defaultdict
 from copy import deepcopy
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.decomposition import PCA
 
 import numpy as np
 from rules.correlations import C 
@@ -55,20 +57,6 @@ def visualize_clusters(X, labels, centroids):
     plt.show()
 
 def k_means(input, max_k=5, max_iters=500, tol=1e-4):
-    """
-    Perform dynamic k-means clustering with automatic k selection.
-
-    Parameters:
-        input (torch.Tensor): Tensor of shape (1, d, n), where n is the number of points.
-        max_k (int): Maximum number of clusters to consider.
-        max_iters (int): Maximum iterations for k-means.
-        tol (float): Tolerance for centroid movement.
-
-    Returns:
-        out (torch.Tensor): Aggregated mean of benign clusters (1, d, 1).
-        attackers (list): Indices of outlier points (or attackers).
-        best_k (int): Optimal number of clusters.
-    """
     n = input.shape[-1]  # Number of points
     d = input.shape[1]   # Vector dimension
 
@@ -80,81 +68,66 @@ def k_means(input, max_k=5, max_iters=500, tol=1e-4):
     # Convert input tensor to numpy for clustering
     X = inputT.squeeze(0).T.numpy()  # Shape: (n, d)
 
+    # Reduce dimensionality with PCA if d > 2
+    pca = PCA(n_components=min(40, d))
+    X_pca = pca.fit_transform(X)
+
     # Try different values of k and calculate silhouette scores
     silhouette_scores = []
     cluster_results = {}
 
     scaler = StandardScaler()
-    data_scaled = scaler.fit_transform(X)
+    data_scaled = scaler.fit_transform(X_pca)
 
-    for k in range(2,  n):
-        kmeans = KMeans(n_clusters=k, n_init='auto', init='k-means++')
+    for k in range(2, n):
+        kmeans = MiniBatchKMeans(n_clusters=k, batch_size=100, n_init='auto', init='k-means++')
         labels = kmeans.fit_predict(data_scaled)
         silhouette_scores.append(silhouette_score(data_scaled, labels))
         cluster_results[k] = (kmeans.cluster_centers_, labels)
-        #print("K: ", k, ", Silhouette Score: ", silhouette_score(data_scaled,labels))
 
     # Select the k with the best silhouette score
     best_k = np.argmax(silhouette_scores) + 2  # Adding 2 because range starts at k=2
     centroids, labels = cluster_results[best_k]
 
-    # Identify benign clusters and attackers
-    #cluster_sizes = np.array([np.sum(labels == i) for i in range(best_k)])
-    #min_cluster_size = cluster_sizes.min()
-
     print("BEST K: ", best_k)
 
-    #visualize_clusters(data_scaled, labels, centroids)
-
-    cost = C(input,n)
+    cost = C(input, n)
 
     cluster_nodes = defaultdict(list)
 
-    # Assuming `labels` is the array of cluster labels for each point
     for idx, label in enumerate(labels):
         cluster_nodes[label].append(idx)
 
-    # Convert to a regular dictionary
     cluster_nodes = dict(cluster_nodes)
     
     # To store the median scores of the correlation matrix for each cluster
     cluster_medians = {}
 
-    # Initialize empty lists to store benign clients, attackers, and temporary nodes
     benign_clients = []
     attackers = []
 
-    # Print nodes in each cluster
     for cluster, nodes in cluster_nodes.items():
-        logger.info(f"Cluster {cluster}: Nodes {nodes}")
         cluster_cost = []
         for i in range(len(nodes)):
-            for j in range(i + 1, len(nodes)):  # Avoid duplicates (i, j) == (j, i)
+            for j in range(i + 1, len(nodes)):
                 node1 = nodes[i]
                 node2 = nodes[j]
                 cluster_cost.append(cost[node1][node2])
 
-        # Calculate the median of the collected values
         if cluster_cost:
             median_value = np.median(cluster_cost)
             cluster_medians[cluster] = median_value        
 
-    min = +1*n
+    min_val = +1 * n
     min_cluster = None
 
-    # Find the cluster with the minimun median, the nodes in this clusters are the benign ones
     for cluster, median in cluster_medians.items():
-        logger.info(f"Cluster {cluster} median value: {median}")
-        if median < min:
-            min = median
+        if median < min_val:
+            min_val = median
             min_cluster = cluster
     
     benign_clients = cluster_nodes[min_cluster]      
     attackers += ([i for i in range(n) if i not in benign_clients])
-
-    logger.info(f"Attackers: {attackers}")
-
-    logger.info(f"Benign clients: {benign_clients}")
 
     input = input.squeeze(0)  
 
