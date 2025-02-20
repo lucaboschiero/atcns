@@ -3,7 +3,7 @@ import time
 import os
 
 # Define launcher execution log path
-execution_log_path = "./logs/execution_log-cifar-5innerepochs.txt"
+execution_log_path = "./logs/execution_log-femnist.txt"
 
 # Define script and argument sets
 script_path = "./main.py"
@@ -11,13 +11,12 @@ script_path = "./main.py"
 aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
 device = "cuda"
 label_flipping_type = 'SF' # MF -> multilabelflipping  SF -> singlelabelflipping
-epochs = 30
+epochs = 4
 total_clients = 40
-#attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
-attacker_percentage = [50]
+attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
 labelflipping_percentage = [25, 50, 75]
-dataset = "cifar"
-client_training_epochs = 5      # choose 1 if you want to use default value 1
+dataset = "femnist"
+client_training_epochs = 1      # choose 1 if you want to use default value 1
 
 attacks = "backdoor/labelflipping" if label_flipping_type.upper() != "MF" else "backdoor/multilabelflipping"
 

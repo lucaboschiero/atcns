@@ -17,6 +17,14 @@ logger = get_logger()
 
 # Function to initialize the log table if it doesn't exist
 def initialize_log_table(filepath, columns):
+    # Estrai la cartella dal percorso del file
+    directory = os.path.dirname(filepath)
+    
+    # Se la cartella non esiste, creala
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
+
     if not os.path.exists(filepath):
         # Create an empty DataFrame with specified columns
         log_table = pd.DataFrame(columns=columns)
@@ -80,9 +88,16 @@ def main(args):
         testData = imdb.test_dataloader(args.test_batch_size)
         Net = imdb.Net
         criterion = F.cross_entropy
+    elif args.dataset == 'femnist':
+        from tasks import femnist
+        trainData = femnist.train_dataloader(args.num_clients, loader_type=args.loader_type, path=args.loader_path,
+                                           store=False)
+        testData = femnist.test_dataloader(args.test_batch_size)
+        Net = femnist.Net
+        criterion = F.cross_entropy
 
     # create server instance
-    model0 = Net()     #create a mnist/cifar/cifar100/fminst object according to the dataset
+    model0 = Net()     #create a mnist/cifar/cifar100/fminst/femnist object according to the dataset
     server = Server(model0, testData, criterion, device)          #create a server instance, passing the model, testData...
     server.set_AR(args.AR)             #set the aggregation rule (The aggregation rule determines how the updates from different clients are combined.)
     server.path_to_aggNet = args.path_to_aggNet
