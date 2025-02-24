@@ -96,6 +96,9 @@ def main(args):
         Net = femnist.Net
         criterion = F.cross_entropy
 
+
+    print("Train data length: ", len(trainData))
+    print("Train data[0] ", trainData[0])
     # create server instance
     model0 = Net()     #create a mnist/cifar/cifar100/fminst/femnist object according to the dataset
     server = Server(model0, testData, criterion, device)          #create a server instance, passing the model, testData...

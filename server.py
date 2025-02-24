@@ -62,7 +62,7 @@ class Server():
             count = 0
             c = 0
             f1 = 0
-            conf = np.zeros([10,10])
+            conf = np.zeros([62,62])
 
             total_samples_label_0_1 = 100  # Number of samples per label for ASR calculation
             relative_indexes = []
@@ -99,7 +99,9 @@ class Server():
 
                     correct += pred.eq(target.view_as(pred)).sum().item()    #number of correct predictions
                     count += pred.shape[0]                                   #number of predictions
-                    conf += confusion_matrix(target.cpu(),pred.cpu(), labels = [i for i in range(10)])    #calculate global confusion matrix
+                    conf += confusion_matrix(target.cpu(),pred.cpu(), labels = [i for i in range(62)])    #calculate global confusion matrix
+                    #print("Prova")
+                    #print(conf)
                     f1 += f1_score(target.cpu(), pred.cpu(), average = 'weighted')*count          #calculate global f1 score   
                     c+=count
 

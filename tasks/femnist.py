@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from dataloader import *  # Ensure this correctly handles FEMNIST partitions
+from PIL import Image
 
 # Define the network model
 class Net(nn.Module):
@@ -17,9 +18,9 @@ class Net(nn.Module):
         self.conv2 = nn.Conv2d(32, 64, 3)
         
         # Adjusted feature size after convolutions and pooling
-        self.fc1 = nn.Linear(64 * 5 * 5, 256)  # Adjust based on final feature map size
+        self.fc1 = nn.Linear(64 * 6 * 6, 256)  # Adjust based on final feature map size
         self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 10)  # FEMNIST has 62 classes (0-9, a-z, A-Z)
+        self.fc3 = nn.Linear(128, 62)  # FEMNIST has 62 classes (0-9, a-z, A-Z)
     
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -35,35 +36,83 @@ class Net(nn.Module):
 
     def num_flat_features(self, x):
         return torch.prod(torch.tensor(x.size()[1:])).item()
-    
+
 
 class FEMNISTDataset(Dataset):
-    def __init__(self, data_path, split="train", transform=None):
-        self.data_path = data_path
-        self.split = split
+    def __init__(self, data_path, split="train", transform=None, size=None):
+        self.data_path = os.path.join(data_path, split)  # Path to "train/" or "test/"
         self.transform = transform
-
-        # Carica i dati dal file JSON
-        with open(os.path.join(data_path, f"{split}.json"), 'r') as f:
-            self.data = json.load(f)
-
-        # Filtra solo i numeri (etichette 0-9)
         self.images = []
         self.labels = []
-        for user in self.data['users']:
-            for x, y in zip(self.data['user_data'][user]['x'], self.data['user_data'][user]['y']):
-                if 0 <= y <= 9:  # Mantieni solo i numeri
-                    self.images.append(torch.tensor(x, dtype=torch.float32).view(1, 28, 28))  # Reshape
-                    self.labels.append(torch.tensor(y, dtype=torch.long))
+        self.client_ids = []  # Store client IDs
+        self.client_data = {}  # Dictionary to store data grouped by client_id
+
+        if not os.path.exists(self.data_path):
+            raise FileNotFoundError(f"Directory {self.data_path} not found!")
+
+        # Iterate through all JSON files in the directory
+        for file_name in os.listdir(self.data_path):
+            if file_name.endswith(".json"):
+                file_path = os.path.join(self.data_path, file_name)
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+
+                # Extract data from each client's subset
+                for user in data['users']:
+                    for x, y in zip(data['user_data'][user]['x'], data['user_data'][user]['y']):
+                        img = torch.tensor(x, dtype=torch.float32).view(28, 28)  # Reshape image
+                        self.images.append(img)
+                        self.labels.append(y)
+                        self.client_ids.append(user)  # Track which client owns this data
+
+                        # Group data by client_id
+                        if user not in self.client_data:
+                            self.client_data[user] = []
+                        self.client_data[user].append(len(self.images) - 1)
+
+        self.targets = torch.tensor(self.labels, dtype=torch.long)
+
+        if size:
+            self._partition_data(size)
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        img, label = self.images[idx], self.labels[idx]
+        img, label, client_id = self.images[idx], self.labels[idx], self.client_ids[idx]
+        img = Image.fromarray(img.numpy())  # Convert to PIL Image
+
         if self.transform:
             img = self.transform(img)
-        return img, label
+
+        return img, label  # We no longer return client_id here, for compatibility
+
+    def _partition_data(self, size):
+        """
+        Partitions the data into 'size' number of groups.
+        This function ensures that only the required number of clients are kept.
+        """
+        # List of all client_ids
+        client_ids = list(self.client_data.keys())
+
+        # Ensure that we only use 'size' number of clients
+        if len(client_ids) > size:
+            # If there are more clients than 'size', randomly select 'size' clients
+            np.random.shuffle(client_ids)
+            client_ids = client_ids[:size]
+        elif len(client_ids) < size:
+            raise ValueError(f"Not enough clients in the dataset to create {size} partitions.")
+
+        # Create the partitions based on client_ids
+        self.client_data = {client_id: self.client_data[client_id] for client_id in client_ids}
+
+    def get_client_data(self):
+        """
+        Returns the partitioned data grouped by client_id.
+        """
+        return self.client_data
+
+
 
 def getFEMNISTDataset(split="train"):
     transform = transforms.Compose([
@@ -76,13 +125,15 @@ def getFEMNISTDataset(split="train"):
 
 # Create Data Loaders for FEMNIST
 def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/femnist_loader.pk'):
-    assert loader_type in ['iid', 'byLabel', 'dirichlet'], 'Invalid loader type'
+    assert loader_type in ['iid', 'byLabel', 'dirichlet', 'femnist'], 'Invalid loader type'
     if loader_type == 'iid':
         loader_type = iidLoader
     elif loader_type == 'byLabel':
         loader_type = byLabelLoader
     elif loader_type == 'dirichlet':
         loader_type = dirichletLoader
+    elif loader_type == 'femnist':
+        loader_type = femnistLoader
     
     if store:
         try:
