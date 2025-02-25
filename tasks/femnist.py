@@ -9,6 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from dataloader import *  # Ensure this correctly handles FEMNIST partitions
 from PIL import Image
+import matplotlib.pyplot as plt
 
 # Define the network model
 class Net(nn.Module):
@@ -64,6 +65,11 @@ class FEMNISTDataset(Dataset):
                         self.images.append(img)
                         self.labels.append(y)
                         self.client_ids.append(user)  # Track which client owns this data
+
+                        #plt.imshow(img.squeeze(), cmap="gray")  # Remove extra dimensions and set grayscale colormap
+                        #plt.title(f"Label: {y}")
+                        #plt.show()
+
 
                         # Group data by client_id
                         if user not in self.client_data:
@@ -132,8 +138,6 @@ def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/fe
         loader_type = byLabelLoader
     elif loader_type == 'dirichlet':
         loader_type = dirichletLoader
-    elif loader_type == 'femnist':
-        loader_type = femnistLoader
     
     if store:
         try:
@@ -156,6 +160,11 @@ def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/fe
 
 def test_dataloader(test_batch_size):
     dataset = getFEMNISTDataset("test")
+    img, label = dataset[0]  # Get the first image and label
+
+    """plt.imshow(img.squeeze(), cmap="gray")  # Remove extra dimensions and set grayscale colormap
+    plt.title(f"Label: {label}")
+    plt.show()"""
     return DataLoader(dataset, batch_size=test_batch_size, shuffle=False)
 
 

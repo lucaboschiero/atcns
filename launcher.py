@@ -11,13 +11,12 @@ script_path = "./main.py"
 aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
 device = "cpu"
 label_flipping_type = 'SF' # MF -> multilabelflipping  SF -> singlelabelflipping
-epochs = 4
+epochs = 30
 total_clients = 40
 attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
 labelflipping_percentage = [25, 50, 75]
 dataset = "femnist"
 client_training_epochs = 1      # choose 1 if you want to use default value 1
-loader_type = 'femnist'
 
 attacks = "backdoor/labelflipping" if label_flipping_type.upper() != "MF" else "backdoor/multilabelflipping"
 
@@ -45,7 +44,6 @@ for percentage in attacker_percentage:
                 "-n", str(total_clients),
                 "--epochs", str(epochs),
                 "--dataset", dataset,
-                "--loader_type", loader_type,
                 "--inner_epochs", str(client_training_epochs)
             ]
 

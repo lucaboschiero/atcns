@@ -143,35 +143,6 @@ class dirichletLoader(customDataLoader):
             for j in range(self.size):
                 partition_list[j] += part_list[j]
         return partition_list
-    
-class femnistLoader(customDataLoader):
-    """
-    Splits the FEMNIST dataset into Non-IID partitions by client.
-    Each partition contains only the samples of the corresponding client.
-    """
-
-    def __init__(self, size, dataset, bsz=128):
-        super(femnistLoader, self).__init__(size, dataset, bsz)
-
-    def getPartitions(self):
-        """
-        Returns partitions from pre-partitioned dataset.
-        :return: A list of partitions, each corresponding to a client's data.
-        """
-        client_data = self.dataset.get_client_data()  # Get partitioned data
-
-        # Ensure that we only use 'size' number of clients
-        if len(client_data) > self.size:
-            client_ids = list(client_data.keys())
-            np.random.shuffle(client_ids)
-            client_ids = client_ids[:self.size]
-            client_data = {client_id: client_data[client_id] for client_id in client_ids}
-
-        # Create the partitions as a list of indices (one for each client)
-        partition_list = list(client_data.values())
-
-        return partition_list
-
 
 if __name__ == '__main__':
     from torchvision import datasets, transforms
