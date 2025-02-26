@@ -114,7 +114,7 @@ def getFEMNISTDataset(split="train", num_clients=None):
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
-    return FEMNISTDataset('./leaf/data/femnist/data', split=split, transform=transform, num_clients=num_clients)
+    return FEMNISTDataset('./data/leaf/data/femnist/data', split=split, transform=transform, num_clients=num_clients)
 
 
 def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/femnist_loader.pk'):

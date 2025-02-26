@@ -40,6 +40,66 @@ class Attacker_LabelFlipping59to71(Client):
         target_ = torch.tensor(list(map(lambda x: 7 if x == 5 else (1 if x == 9 else x), target)))
         assert target.shape == target_.shape, "Inconsistent target shape"
         return data, target_        
+    
+class Attacker_LabelFlipping593to714(Client):
+    def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
+        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+                                                           inner_epochs)
+
+    def data_transform(self, data, target):
+        target_ = torch.tensor(list(map(lambda x: 7 if x == 5 else (1 if x == 9 else (4 if x == 3 else x)), target)))
+        assert target.shape == target_.shape, "Inconsistent target shape"
+        return data, target_    
+    
+class Attacker_LabelFlipping5932to7149(Client):
+    def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
+        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+                                                           inner_epochs)
+
+    def data_transform(self, data, target):
+        target_ = torch.tensor(list(map(lambda x: 7 if x == 5 else (1 if x == 9 else (4 if x == 3 else (9 if x == 2 else x))), target)))
+        assert target.shape == target_.shape, "Inconsistent target shape"
+        return data, target_
+
+class Attacker_LabelFlipping59326to71495(Client):
+    def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
+        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+                                                           inner_epochs)
+
+    def data_transform(self, data, target):
+        target_ = torch.tensor(list(map(lambda x: 7 if x == 5 else (1 if x == 9 else (4 if x == 3 else (9 if x == 2 else (5 if x == 6 else x)))), target)))
+        assert target.shape == target_.shape, "Inconsistent target shape"
+        return data, target_
+    
+class Attacker_LabelFlipping59326_12to71495_16(Client):
+    def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
+        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+                                                           inner_epochs)
+
+    def data_transform(self, data, target):
+        target_ = torch.tensor(list(map(lambda x: 7 if x == 5 else (1 if x == 9 else (4 if x == 3 else (9 if x == 2 else (5 if x == 6 else (16 if x == 12 else x))))), target)))
+        assert target.shape == target_.shape, "Inconsistent target shape"
+        return data, target_
+    
+class Attacker_LabelFlipping59326_12_19to71495_16_24(Client):
+    def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
+        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+                                                           inner_epochs)
+
+    def data_transform(self, data, target):
+        target_ = torch.tensor(list(map(lambda x: 7 if x == 5 else (1 if x == 9 else (4 if x == 3 else (9 if x == 2 else (5 if x == 6 else (16 if x == 12 else (24 if x == 19 else x)))))), target)))
+        assert target.shape == target_.shape, "Inconsistent target shape"
+        return data, target_
+    
+class Attacker_LabelFlipping59326_12_19_45to71495_16_24_27(Client):
+    def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
+        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+                                                           inner_epochs)
+
+    def data_transform(self, data, target):
+        target_ = torch.tensor(list(map(lambda x: 7 if x == 5 else (1 if x == 9 else (4 if x == 3 else (9 if x == 2 else (5 if x == 6 else (16 if x == 12 else (24 if x == 19 else (27 if x == 45 else x))))))), target)))
+        assert target.shape == target_.shape, "Inconsistent target shape"
+        return data, target_
 
 
 class Attacker_Backdoor(Client):

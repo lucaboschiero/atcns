@@ -286,7 +286,7 @@ def main(args):
     total_str = f"{total:.2f}".replace('.', ',')
 
      #Compute the average detection time
-    avg_det_time = f"{(sum(detection_time_vec) / len(detection_time_vec)) :.2f}"
+    avg_det_time = f"{(sum(detection_time_vec) / len(detection_time_vec)) :.2f}" if args.AR != "fedavg" else "Algotithm not active"
     print("Average detection time: ", avg_det_time)
     with open(f"./logs/detection_time.txt", "w") as f:
         f.write(avg_det_time)
@@ -295,34 +295,40 @@ def main(args):
     n_attackers = sum(1 for i in label if i == 0)
     percentageOfAttackers = (n_attackers / args.num_clients) * 100
 
+    n_flipped_label = 2
+
     # Table for accuracy
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/Accuracy/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/Accuracy/{total_str}{s2}-{n_flipped_label}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    # initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "fedavg"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=Testaccuracy)
 
     # Table for early detection
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/EarlyDetection/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/EarlyDetection/{total_str}{s2}-{n_flipped_label}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    # initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "fedavg"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ED_epoch)
 
     #Table for false positives
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/FP/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/FP/{total_str}{s2}-{n_flipped_label}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
-    FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}"
+    # initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "fedavg"])
+    FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}" if args.AR != "fedavg" else "NA"
     print("False positive mean: ", FPmean)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=FPmean)
 
     #Table for ASR
     # Initialize the filepath
-    filepath = f"./logs/{args.dataset.capitalize()}/ASR/{total_str}{s2}.csv"
+    filepath = f"./logs/{args.dataset.capitalize()}/ASR/{total_str}{s2}-{n_flipped_label}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    # initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "fedavg"])
     ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / 2):.3f}"
     print("ASR total: ", ASR_total)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ASR_total)
@@ -342,11 +348,12 @@ def add_or_update_row(filepath, attackers_percentage, column_name, value):
         # Row does not exist; create a new one
         new_row = {
             "% of attackers": attackers_percentage,
-            "mstold": value if column_name == "mstold" else None,
-            "density": value if column_name == "density" else None,
-            "foolsgold": value if column_name == "foolsgold" else None,
-            "mst": value if column_name == "mst" else None,
-            "kmeans": value if column_name == "kmeans" else None,
+            # "mstold": value if column_name == "mstold" else None,
+            # "density": value if column_name == "density" else None,
+            # "foolsgold": value if column_name == "foolsgold" else None,
+            # "mst": value if column_name == "mst" else None,
+            # "kmeans": value if column_name == "kmeans" else None,
+            "fedavg": value if column_name == "fedavg" else None,
         }
         # Replace append with concat
         new_row_df = pd.DataFrame([new_row])  # Convert the new row to a DataFrame
