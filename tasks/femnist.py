@@ -10,6 +10,7 @@ from torchvision import transforms
 from dataloader import *  # Ensure this correctly handles FEMNIST partitions
 from PIL import Image
 import matplotlib.pyplot as plt
+import random
 
 # Define the network model
 class Net(nn.Module):
@@ -40,122 +41,109 @@ class Net(nn.Module):
 
 
 class FEMNISTDataset(Dataset):
-    def __init__(self, data_path, split="train", transform=None, size=None):
-        self.data_path = os.path.join(data_path, split)  # Path to "train/" or "test/"
+    def __init__(self, data_path, split="train", transform=None, num_clients=None):
+        self.data_path = os.path.join(data_path, split)
         self.transform = transform
         self.images = []
         self.labels = []
-        self.client_ids = []  # Store client IDs
-        self.client_data = {}  # Dictionary to store data grouped by client_id
+        self.client_ids = []
+        self.client_data = {}
 
         if not os.path.exists(self.data_path):
             raise FileNotFoundError(f"Directory {self.data_path} not found!")
 
-        # Iterate through all JSON files in the directory
+        # Read all clients' data
         for file_name in os.listdir(self.data_path):
             if file_name.endswith(".json"):
                 file_path = os.path.join(self.data_path, file_name)
                 with open(file_path, 'r') as f:
                     data = json.load(f)
 
-                # Extract data from each client's subset
                 for user in data['users']:
                     for x, y in zip(data['user_data'][user]['x'], data['user_data'][user]['y']):
-                        img = torch.tensor(x, dtype=torch.float32).view(28, 28)  # Reshape image
+                        img = torch.tensor(x, dtype=torch.float32).view(28, 28)  
                         self.images.append(img)
                         self.labels.append(y)
-                        self.client_ids.append(user)  # Track which client owns this data
+                        self.client_ids.append(user)
 
-                        #plt.imshow(img.squeeze(), cmap="gray")  # Remove extra dimensions and set grayscale colormap
-                        #plt.title(f"Label: {y}")
-                        #plt.show()
-
-
-                        # Group data by client_id
                         if user not in self.client_data:
                             self.client_data[user] = []
                         self.client_data[user].append(len(self.images) - 1)
 
         self.targets = torch.tensor(self.labels, dtype=torch.long)
 
-        if size:
-            self._partition_data(size)
+        if num_clients:
+            self._partition_data(num_clients)
+
+    def _partition_data(self, num_clients):
+        """
+        Selects data only from the first 'num_clients' clients.
+        """
+        available_clients = list(self.client_data.keys())
+
+        # Ensure we only take the first 'num_clients' clients
+        selected_clients = random.sample(available_clients, num_clients)
+
+        # Flatten list of indices for selected clients
+        selected_indices = [idx for client in selected_clients for idx in self.client_data[client]]
+
+        # Filter dataset to only include selected clients' data
+        self.images = [self.images[i] for i in selected_indices]
+        self.labels = [self.labels[i] for i in selected_indices]
+        self.client_ids = [self.client_ids[i] for i in selected_indices]
+        
+        # Update target labels
+        self.targets = torch.tensor(self.labels, dtype=torch.long)
+
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        img, label, client_id = self.images[idx], self.labels[idx], self.client_ids[idx]
-        img = Image.fromarray(img.numpy())  # Convert to PIL Image
+        img, label = self.images[idx], self.labels[idx]
+        img = Image.fromarray(img.numpy())
 
         if self.transform:
             img = self.transform(img)
 
-        return img, label  # We no longer return client_id here, for compatibility
+        return img, label
 
-    def _partition_data(self, size):
-        """
-        Partitions the data into 'size' number of groups.
-        This function ensures that only the required number of clients are kept.
-        """
-        # List of all client_ids
-        client_ids = list(self.client_data.keys())
-
-        # Ensure that we only use 'size' number of clients
-        if len(client_ids) > size:
-            # If there are more clients than 'size', randomly select 'size' clients
-            np.random.shuffle(client_ids)
-            client_ids = client_ids[:size]
-        elif len(client_ids) < size:
-            raise ValueError(f"Not enough clients in the dataset to create {size} partitions.")
-
-        # Create the partitions based on client_ids
-        self.client_data = {client_id: self.client_data[client_id] for client_id in client_ids}
-
-    def get_client_data(self):
-        """
-        Returns the partitioned data grouped by client_id.
-        """
-        return self.client_data
-
-
-
-def getFEMNISTDataset(split="train"):
+def getFEMNISTDataset(split="train", num_clients=None):
     transform = transforms.Compose([
         transforms.Resize((32, 32)),  # Ensure consistency with model input
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
-    return FEMNISTDataset('./leaf/data/femnist/data', split=split, transform=transform)
+    return FEMNISTDataset('./leaf/data/femnist/data', split=split, transform=transform, num_clients=num_clients)
 
 
-# Create Data Loaders for FEMNIST
 def train_dataloader(num_clients, loader_type='iid', store=True, path='./data/femnist_loader.pk'):
     assert loader_type in ['iid', 'byLabel', 'dirichlet', 'femnist'], 'Invalid loader type'
+    
     if loader_type == 'iid':
         loader_type = iidLoader
     elif loader_type == 'byLabel':
         loader_type = byLabelLoader
     elif loader_type == 'dirichlet':
         loader_type = dirichletLoader
-    
+
     if store:
         try:
             with open(path, 'rb') as handle:
                 loader = pickle.load(handle)
         except FileNotFoundError:
             print('Loader not found, initializing a new one...')
-            dataset = getFEMNISTDataset("train")
+            dataset = getFEMNISTDataset("train", num_clients=1000) 
             loader = loader_type(num_clients, dataset)
     else:
         print('Initializing a new data loader...')
-        dataset = getFEMNISTDataset("train")
+        dataset = getFEMNISTDataset("train", num_clients=1000) 
         loader = loader_type(num_clients, dataset)
 
     if store:
         with open(path, 'wb') as handle:
             pickle.dump(loader, handle)
-    
+
     return loader
 
 def test_dataloader(test_batch_size):

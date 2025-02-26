@@ -8,15 +8,15 @@ execution_log_path = "./logs/execution_log-femnist.txt"
 # Define script and argument sets
 script_path = "./main.py"
 
-aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
+aggRule = ["mst", "kmeans", "mstold", "foolsgold", "density"]
 device = "cpu"
 label_flipping_type = 'SF' # MF -> multilabelflipping  SF -> singlelabelflipping
 epochs = 30
-total_clients = 40
+total_clients = 100
 attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
 labelflipping_percentage = [25, 50, 75]
 dataset = "femnist"
-client_training_epochs = 1      # choose 1 if you want to use default value 1
+client_training_epochs = 5      # choose 1 if you want to use default value 1
 
 attacks = "backdoor/labelflipping" if label_flipping_type.upper() != "MF" else "backdoor/multilabelflipping"
 
