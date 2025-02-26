@@ -144,15 +144,14 @@ class Server():
 
             samples_5 = 0
             samples_9 = 0
-
-            samples_7 = 0
-            samples_1 = 0
+            samples_3 = 0
 
             #Disables gradient calculations to save memory and speed up testing (no backpropagation needed) and iterates over the test dataset using the dataLoader
             with torch.no_grad():
                 for data, target in self.dataLoader:
                     label_5_indexes = []
                     label_9_indexes = []
+                    label_3_indexes = []
                     for i in range(len(target)):
                         if target[i].item() == 5 and samples_5 < total_samples_label_59_71 / 2:
                             label_5_indexes.append(i)
@@ -160,8 +159,11 @@ class Server():
                         elif target[i].item() == 9 and samples_9 < total_samples_label_59_71 / 2:
                             label_9_indexes.append(i)
                             samples_9 = samples_9 + 1
+                        elif target[i].item() == 3 and samples_3 < total_samples_label_59_71 / 2:
+                            label_3_indexes.append(i)
+                            samples_3 = samples_3 + 1
                     
-                    relative_indexes = label_5_indexes + label_9_indexes
+                    relative_indexes = label_5_indexes + label_9_indexes + label_3_indexes
 
                     data, target = data.to(self.device), target.to(self.device)
                     output = self.model(data)              #Feeds the input data through the global model to get predictions.

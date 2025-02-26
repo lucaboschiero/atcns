@@ -43,7 +43,7 @@ class Attacker_LabelFlipping59to71(Client):
     
 class Attacker_LabelFlipping593to714(Client):
     def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
-        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+        super(Attacker_LabelFlipping593to714, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
                                                            inner_epochs)
 
     def data_transform(self, data, target):
@@ -53,7 +53,7 @@ class Attacker_LabelFlipping593to714(Client):
     
 class Attacker_LabelFlipping5932to7149(Client):
     def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
-        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+        super(Attacker_LabelFlipping5932to7149, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
                                                            inner_epochs)
 
     def data_transform(self, data, target):
@@ -63,7 +63,7 @@ class Attacker_LabelFlipping5932to7149(Client):
 
 class Attacker_LabelFlipping59326to71495(Client):
     def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
-        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+        super(Attacker_LabelFlipping59326to71495, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
                                                            inner_epochs)
 
     def data_transform(self, data, target):
@@ -73,7 +73,7 @@ class Attacker_LabelFlipping59326to71495(Client):
     
 class Attacker_LabelFlipping59326_12to71495_16(Client):
     def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
-        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+        super(Attacker_LabelFlipping59326_12to71495_16, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
                                                            inner_epochs)
 
     def data_transform(self, data, target):
@@ -83,7 +83,7 @@ class Attacker_LabelFlipping59326_12to71495_16(Client):
     
 class Attacker_LabelFlipping59326_12_19to71495_16_24(Client):
     def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
-        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+        super(Attacker_LabelFlipping59326_12_19to71495_16_24, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
                                                            inner_epochs)
 
     def data_transform(self, data, target):
@@ -93,7 +93,7 @@ class Attacker_LabelFlipping59326_12_19to71495_16_24(Client):
     
 class Attacker_LabelFlipping59326_12_19_45to71495_16_24_27(Client):
     def __init__(self, cid, model, dataLoader, optimizer, criterion=F.nll_loss, device='cpu', inner_epochs=1):
-        super(Attacker_LabelFlipping59to71, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
+        super(Attacker_LabelFlipping59326_12_19_45to71495_16_24_27, self).__init__(cid, model, dataLoader, optimizer, criterion, device,
                                                            inner_epochs)
 
     def data_transform(self, data, target):
