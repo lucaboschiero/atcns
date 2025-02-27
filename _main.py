@@ -154,7 +154,7 @@ def main(args):
             client_i = Attacker_LabelFlipping1to7(i, model, trainData[i], optimizer, criterion, device,
                                                   args.inner_epochs)
         elif i in attacker_list_multilabelFlipping:
-            client_i = Attacker_LabelFlipping593to714(i, model, trainData[i], optimizer, criterion, device,
+            client_i = Attacker_LabelFlipping59326_12_19_45to71495_16_24_27(i, model, trainData[i], optimizer, criterion, device,
                                                   args.inner_epochs)                                          
         elif i in attacker_list_omniscient:
             client_i = Attacker_Omniscient(i, model, trainData[i], optimizer, criterion, device, args.omniscient_scale,
@@ -295,7 +295,7 @@ def main(args):
     n_attackers = sum(1 for i in label if i == 0)
     percentageOfAttackers = (n_attackers / args.num_clients) * 100
 
-    n_flipped_label = 3
+    n_flipped_label = 8
 
     # Table for accuracy
     # Initialize the filepath

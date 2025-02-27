@@ -8,14 +8,12 @@ execution_log_path = "./logs/execution_log-femnist.txt"
 # Define script and argument sets
 script_path = "./main.py"
 
-# aggRule = ["mst", "kmeans", "mstold", "foolsgold", "density"]
-aggRule = ["fedavg"]
+aggRule = ["mst", "kmeans", "mstold", "foolsgold", "density"]
 device = "cuda"
 label_flipping_type = 'MF' # MF -> multilabelflipping  SF -> singlelabelflipping
 epochs = 30
 total_clients = 40
-# attacker_percentage = [10, 20, 30, 40, 50, 60, 70, 80, 90]
-attacker_percentage = [10]
+attacker_percentage = [20, 40, 70]
 labelflipping_percentage = [50]
 dataset = "femnist"
 client_training_epochs = 1      # choose 1 if you want to use default value 1
