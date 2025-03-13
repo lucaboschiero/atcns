@@ -17,6 +17,14 @@ logger = get_logger()
 
 # Function to initialize the log table if it doesn't exist
 def initialize_log_table(filepath, columns):
+    # Estrai la cartella dal percorso del file
+    directory = os.path.dirname(filepath)
+    
+    # Se la cartella non esiste, creala
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
+
     if not os.path.exists(filepath):
         # Create an empty DataFrame with specified columns
         log_table = pd.DataFrame(columns=columns)
@@ -120,10 +128,25 @@ def main(args):
 
         torch.save(label, f'{server.savePath}/label.pt')        #Saves the label tensor (which marks honest and malicious clients) to the file
 
+    # to divide backdoor attackers:
+    if len(args.attacker_list_backdoor) % 2 == 0:  
+        mid = len(args.attacker_list_backdoor) // 2
+        backdoor_list1 = args.attacker_list_backdoor[:mid]  
+        backdoor_list2 = args.attacker_list_backdoor[mid:]  
+
+        print("Backdoor attackers list: ", args.attacker_list_backdoor.tolist())
+        print("Backdoor attackers type 1: ", backdoor_list1.tolist())
+        print("Backdoor attackers type 2: ", backdoor_list2.tolist())
+    else:
+        print("List has odd number of elements, cannot be divided equally")
+
+
+
     # create clients instance
     attacker_list_labelFlipping = args.attacker_list_labelFlipping
     attacker_list_omniscient = args.attacker_list_omniscient
-    attacker_list_backdoor = args.attacker_list_backdoor
+    attacker_list_backdoor1 = backdoor_list1
+    attacker_list_backdoor2 = backdoor_list2
     attacker_list_labelFlippingDirectional = args.attacker_list_labelFlippingDirectional
     attacker_list_semanticBackdoor = args.attacker_list_semanticBackdoor
     attacker_list_multilabelFlipping = args.attacker_list_multilabelFlipping
@@ -147,8 +170,20 @@ def main(args):
         elif i in attacker_list_omniscient:
             client_i = Attacker_Omniscient(i, model, trainData[i], optimizer, criterion, device, args.omniscient_scale,
                                            args.inner_epochs)
-        elif i in attacker_list_backdoor:
+        elif i in attacker_list_backdoor1:
             client_i = Attacker_Backdoor(i, model, trainData[i], optimizer, criterion, device, args.inner_epochs)
+            
+            if 'RANDOM' in args.attacks.upper():                    #if the user chooses a random trigger for backdoor attack
+                client_i.utils.setRandomTrigger(seed=args.attacks)
+                print(client_i.utils.trigger_position)
+                print(f'Client {i} is using a random backdoor with seed \"{args.attacks}\"')
+            if 'CUSTOM' in args.attacks.upper():                   #if the user chooses a custom trigger for backdoor attack
+                client_i.utils.setTrigger(*args.backdoor_trigger)
+                print(client_i.utils.trigger_position)
+                print(f'Client {i} is using a backdoor with hyperparameter \"{args.backdoor_trigger}\"')
+
+        elif i in attacker_list_backdoor2:
+            client_i = Attacker_Backdoor78to4(i, model, trainData[i], optimizer, criterion, device, args.inner_epochs)
             
             if 'RANDOM' in args.attacks.upper():                    #if the user chooses a random trigger for backdoor attack
                 client_i.utils.setRandomTrigger(seed=args.attacks)
@@ -263,29 +298,29 @@ def main(args):
     s2 = ""
 
 
-    if len(attacker_list_multilabelFlipping) > 0 and len(attacker_list_labelFlipping) > 0 and len(attacker_list_backdoor) > 0:
-        s2 = "3attackers"
+    if len(attacker_list_multilabelFlipping) > 0 and len(attacker_list_labelFlipping) > 0 and len(attacker_list_backdoor1+attacker_list_backdoor2) > 0:
+        s2 = "5attackers"
         total_str = ""
-        number_of_attacker_type = 3
+        number_of_attacker_type = 5
     else:
         if len(attacker_list_labelFlipping) > 0:
             s2 = "SF"
-            if len(attacker_list_backdoor) > 0:
-                total = (len(attacker_list_labelFlipping) / (len(attacker_list_labelFlipping) + len(attacker_list_backdoor)))
+            if len(attacker_list_backdoor1+attacker_list_backdoor2) > 0:
+                total = (len(attacker_list_labelFlipping) / (len(attacker_list_labelFlipping) + len(attacker_list_backdoor1+attacker_list_backdoor2)))
                 #print("TOTAL : ", total)
                 total_str = f"{total:.2f}".replace('.', ',')
                 number_of_attacker_type = 2
         else:
             if len(attacker_list_multilabelFlipping) > 0:
                 s2 = "MF"
-            if len(attacker_list_backdoor) > 0:
-                total = (len(attacker_list_multilabelFlipping) / (len(attacker_list_multilabelFlipping) + len(attacker_list_backdoor)))
+            if len(attacker_list_backdoor1+attacker_list_backdoor2) > 0:
+                total = (len(attacker_list_multilabelFlipping) / (len(attacker_list_multilabelFlipping) + len(attacker_list_backdoor1+attacker_list_backdoor2)))
                 #print("TOTAL : ", total)
                 total_str = f"{total:.2f}".replace('.', ',')
                 number_of_attacker_type = 2
 
     #Compute the average detection time
-    avg_det_time = f"{(sum(detection_time_vec) / len(detection_time_vec)) :.2f}"
+    avg_det_time = f"{(sum(detection_time_vec) / len(detection_time_vec)) :.2f}" if args.AR != "fedavg" else "Algorithm not active"
     print("Average detection time: ", avg_det_time)
     with open(f"./logs/detection_time.txt", "w") as f:
         f.write(avg_det_time)
@@ -298,22 +333,22 @@ def main(args):
     # Initialize the filepath
     filepath = f"./logs/{args.dataset.capitalize()}/Accuracy/{total_str}{s2}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans", "fedavg"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=Testaccuracy)
 
     # Table for early detection
     # Initialize the filepath
     filepath = f"./logs/{args.dataset.capitalize()}/EarlyDetection/{total_str}{s2}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans", "fedavg"])
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ED_epoch)
 
     #Table for false positives
     # Initialize the filepath
     filepath = f"./logs/{args.dataset.capitalize()}/FP/{total_str}{s2}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
-    FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}"
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans", "fedavg"])
+    FPmean = f"{(sum(false_positives_vec) / len(false_positives_vec)) :.2f}" if args.AR != "fedavg" else "NA"
     print("False positive mean: ", FPmean)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=FPmean)
 
@@ -321,7 +356,7 @@ def main(args):
     # Initialize the filepath
     filepath = f"./logs/{args.dataset.capitalize()}/ASR/{total_str}{s2}.csv"
     # Initialize the log table
-    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans"])
+    initialize_log_table(filepath, ["% of attackers", "mstold", "density", "foolsgold", "mst", "kmeans", "fedavg"])
     ASR_total = f"{((float(asr_labelflipping) + float(asr_backdoor)) / number_of_attacker_type):.3f}"
     print("ASR total: ", ASR_total)
     add_or_update_row(filepath=filepath, attackers_percentage=percentageOfAttackers, column_name=args.AR, value=ASR_total)
@@ -346,6 +381,7 @@ def add_or_update_row(filepath, attackers_percentage, column_name, value):
             "foolsgold": value if column_name == "foolsgold" else None,
             "mst": value if column_name == "mst" else None,
             "kmeans": value if column_name == "kmeans" else None,
+            "fedavg": value if column_name == "fedavg" else None,
         }
         # Replace append with concat
         new_row_df = pd.DataFrame([new_row])  # Convert the new row to a DataFrame

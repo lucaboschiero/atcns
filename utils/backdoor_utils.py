@@ -144,3 +144,78 @@ class Backdoor_Utils():
     
     def setTrigger(self,x_offset,y_offset,x_interval,y_interval):
         self.trigger_position=getDifferentPattern(x_offset,y_offset,x_interval,y_interval)
+
+
+class Backdoor_Utils1():
+
+    def __init__(self):
+        self.backdoor_label = 4
+        #self.trigger_position = [[0, 0, 0], [0, 0, 1], [0, 0, 2],   [0, 0, 4], [0, 0, 5], [0, 0, 6],\
+                                 
+        #                         [0, 2, 0], [0, 2, 1], [0, 2, 2],   [0, 2, 4], [0, 2, 5], [0, 2, 6], ]
+        #self.trigger_position = getRandomPattern(6,None)
+        self.trigger_position = getDifferentPattern(3,3)
+        self.trigger_value = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ]
+
+    def get_poison_batch(self, data, targets, backdoor_fraction, backdoor_label, evaluation=False):
+        #         poison_count = 0
+        new_data = torch.empty(data.shape)
+        new_targets = torch.empty(targets.shape)
+
+        altered_samples = []
+        for index in range(0, len(data)):
+            if evaluation:  # will poison only a fraction of samples with label = 3 and 6
+                if targets[index] == 7 or targets[index] == 8:
+                    if torch.rand(1) < backdoor_fraction:
+                        altered_samples.append(index)
+                        new_targets[index] = backdoor_label
+                        new_data[index] = self.add_backdoor_pixels(data[index])
+                    #                 poison_count += 1
+                    else:
+                        new_data[index] = data[index]
+                        new_targets[index] = targets[index]
+                else:
+                    new_data[index] = data[index]
+                    new_targets[index] = targets[index]
+
+            else:  # will poison only samples with label = 3 and 6
+                if targets[index] == 7 or targets[index] == 8:
+                    new_targets[index] = backdoor_label
+                    new_data[index] = self.add_backdoor_pixels(data[index])
+                #                     poison_count += 1
+                    #print(new_data.shape)
+                    b = new_data[index][0].tolist()
+                    #if index == 0 or self.trigger_position != p:
+                    #    plt.imsave('backdoor/'+str(random.randint(0,50000))+'.png', np.array(b).reshape(32,32), cmap=cm.gray)
+                        #print(self.trigger_position)
+                    #    p = self.trigger_position
+                
+                else:
+                    new_data[index] = data[index]
+                    new_targets[index] = targets[index]
+
+        new_targets = new_targets.long()
+        if evaluation:
+            new_data.requires_grad_(False)
+            new_targets.requires_grad_(False)
+            return new_data, new_targets, altered_samples
+    
+        return new_data, new_targets
+
+    def setRandomTrigger(self,k=6,seed=None):
+        '''
+        Use the default pattern if seed equals 0. Otherwise, generate a random pattern.
+        '''
+        if seed==0:
+            return
+        self.trigger_position=getRandomPattern(k,seed)
+
+    def add_backdoor_pixels(self, item):
+        for i in range(0, len(self.trigger_position)):
+        #for i in range(0, 12):
+            pos = self.trigger_position[i]
+            item[pos[0]][pos[1]][pos[2]] = self.trigger_value[i]
+        return item
+    
+    def setTrigger(self,x_offset,y_offset,x_interval,y_interval):
+        self.trigger_position=getDifferentPattern(x_offset,y_offset,x_interval,y_interval)

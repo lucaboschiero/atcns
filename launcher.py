@@ -3,19 +3,19 @@ import time
 import os
 
 # Define launcher execution log path
-execution_log_path = "./logs/execution_log_FMnist_3attackers.txt"
+execution_log_path = "./logs/execution_log_FMnist_5attackers.txt"
 
 # Define script and argument sets
 script_path = "./main.py"
 
-aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans"]
-device = "cpu"
-attacks = "backdoor/labelflipping/multilabelflipping"
+aggRule = ["mstold", "foolsgold", "density", "mst", "kmeans", "fedavg"]
+device = "cuda"
+attacks = "2backdoor/2labelflipping/1multilabelflipping"
 epochs = 30
 total_clients = 40
-attacker_percentage = [10, 20, 30, 40, 50, 60, 70]
+attacker_percentage = [25, 50, 75]
 #attacker_percentage = [50, 60, 70]
-labelflipping_percentage = [33]
+labelflipping_percentage = [20]
 dataset = "fmnist"
 
 # Open a file for logging
@@ -27,12 +27,13 @@ with open(execution_log_path, "a") as log_file:
 for percentage in attacker_percentage:
     num_attacker = int((total_clients * percentage) / 100)
     for lfpercentage in labelflipping_percentage:
-        num_labelflipping_attacker = int((num_attacker * lfpercentage) / 100 + 0.5) 
-        # Adding 0.5 ensures proper rounding to the nearest integer:  
-        # - If the result is 7.5 or higher, it rounds up to 8.  
-        # - If the result is 7.4 or lower, it rounds down to 7.
-        num_multiLabelflipping_attacker = int((num_attacker * lfpercentage) / 100 + 0.5)
-        num_backdoor_attacker = num_attacker - num_labelflipping_attacker - num_multiLabelflipping_attacker
+        num_labelflipping_attacker1 = int((num_attacker * lfpercentage) / 100)
+        num_labelflipping_attacker2 = int((num_attacker * lfpercentage) / 100) 
+      
+        num_multiLabelflipping_attacker = int((num_attacker * lfpercentage) / 100)
+
+        num_backdoor_attacker1 = int((num_attacker * lfpercentage) / 100)
+        num_backdoor_attacker2 = num_attacker - num_labelflipping_attacker1 - num_labelflipping_attacker2 - num_multiLabelflipping_attacker - num_backdoor_attacker1
 
         #print("Attacker: ", num_attacker)
         #print("Single LF: ", num_labelflipping_attacker)
@@ -46,9 +47,10 @@ for percentage in attacker_percentage:
                 "--device", device,
                 "--attacks", attacks,
                 "--save_model_weights",
-                "--n_attacker_labelFlipping", str(num_labelflipping_attacker),
+                "--n_attacker_labelFlipping", str(num_labelflipping_attacker1),
+                "--n_attacker_labelFlippingDirectional", str(num_labelflipping_attacker2),
                 "--n_attacker_multilabelFlipping", str(num_multiLabelflipping_attacker),
-                "--n_attacker_backdoor", str(num_backdoor_attacker),
+                "--n_attacker_backdoor", str(num_backdoor_attacker1 + num_backdoor_attacker2),
                 "-n", str(total_clients),
                 "--epochs", str(epochs),
                 "--dataset", dataset
@@ -72,7 +74,7 @@ for percentage in attacker_percentage:
             with open(execution_log_path, "a") as log_file:
                 # Log the arguments
                 log_file.write(f"Running with parameters:\n")
-                log_file.write(f"aggRule: {ar}, attacker_percentage: {percentage}, labelflipping_percentage: {lfpercentage}, num_labelflipping_attacker: {num_labelflipping_attacker}, num_backdoor_attacker: {num_backdoor_attacker}\n")
+                log_file.write(f"aggRule: {ar}, attacker_percentage: {percentage}, labelflipping_percentage: {lfpercentage}, num_labelflipping_attacker1: {num_labelflipping_attacker1}, num_labelflipping_attacker2: {num_labelflipping_attacker2}, num_multi-labelflipping_attacker: {num_multiLabelflipping_attacker}, num_backdoor_attacker: {num_backdoor_attacker1}, num_backdoor_attacker: {num_backdoor_attacker2}\n")
                 
                 end_time = time.time()
                 execution_time = (end_time - start_time) / 60

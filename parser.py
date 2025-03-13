@@ -52,10 +52,11 @@ def parse_args():
     args.attacker_list_labelFlipping = np.array([i for i in range(m_b,m_s+m_b)])
 
     m = args.n_attacker_labelFlippingDirectional
-    args.attacker_list_labelFlippingDirectional = np.random.permutation(list(range(n)))[:m]
+    #args.attacker_list_labelFlippingDirectional = np.random.permutation(list(range(n)))[:m]
+    args.attacker_list_labelFlippingDirectional = np.array([i for i in range(m_s+m_b,m_s+m_b+m)])
     
     m_m = args.n_attacker_multilabelFlipping
-    args.attacker_list_multilabelFlipping = np.array([i for i in range(m_s+m_b,m_s+m_b+m_m)])
+    args.attacker_list_multilabelFlipping = np.array([i for i in range(m_s+m_b+m,m_s+m_b+m+m_m)])
 
     m = args.n_attacker_omniscient
     args.attacker_list_omniscient = np.random.permutation(list(range(n)))[:m]
